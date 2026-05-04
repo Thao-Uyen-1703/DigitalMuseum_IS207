@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Đăng nhập</title>
+    <link rel="stylesheet" href="../css/login.css">
+</head>
+
+<body>
+
+<div class="login-container">
+
+    <!-- LEFT (optional background) -->
+    <div class="login-left">
+        <h1>Welcome back</h1>
+        <p>Khám phá văn hoá Việt qua từng sản phẩm ✨</p>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="login-right">
+
+        <div class="login-box">
+
+            <!-- LOGO -->
+            <div class="logo-box">
+                <img src="image/logo.png" alt="logo">
+            </div>
+
+            <h2>Đăng nhập</h2>
+            <p class="sub-text">Chào mừng bạn quay trở lại 💚</p>
+
+            <!-- FORM -->
+            <form id="login-form">
+
+                <div class="input-group">
+                    <input type="text" id="username" placeholder="Tên đăng nhập">
+                </div>
+
+                <div class="input-group password-group">
+                    <input type="password" id="password" placeholder="Mật khẩu">
+                    <span class="toggle-pass" onclick="togglePassword()">👁</span>
+                </div>
+
+                <span class="error_text" id="error_text"></span>
+
+                <button type="submit" class="login-btn">Đăng nhập</button>
+
+            </form>
+
+            <div class="divider"><span>Hoặc</span></div>
+
+            <!-- SOCIAL -->
+            <button class="social-btn google">Google</button>
+            <button class="social-btn facebook">Facebook</button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script src="../js/login.js"></script>
+
+</body>
+</html>
