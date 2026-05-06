@@ -1,4 +1,5 @@
 const authModel = require('../models/authModel');
+const generateToken = require("../utils/generateToken");
 
 const authController = {
     login: async (req, res) => {
@@ -21,10 +22,22 @@ const authController = {
                 return res.status(401).json({ success: false, message: "Email hoặc mật khẩu không đúng" });
             }
 
-            const { PasswordHash, ...userInfo } = user;
+            if(!user.IsActive) {
+                return res.status(403).json({ success: false, message: "Tài khoản đã bị khóa" });
+            }
+
+            const token = generateToken(user);
+
+            const userInfo = {
+                id: user.UserID,
+                username: user.FullName,
+                email: user.Email,
+                role: user.Role
+            };
 
             return res.status(200).json({
                 success: true,
+                token,
                 data: userInfo
             });
 

@@ -17,7 +17,7 @@ app.use(cors());
 
 app.use('/api/product', productRoute);
 app.use('/api/diadiem', diadiemRoute);
-app.use('/api', authRoute);
+app.use('/api/auth', authRoute);
 
 app.listen(port, () => {
     console.log(`Running at port:${port}`);
