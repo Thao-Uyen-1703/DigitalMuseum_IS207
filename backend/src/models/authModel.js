@@ -7,6 +7,11 @@ const authModel = {
         return rows[0];
     },
 
+    findUserById: async (userId) => {
+        const [rows] = await db.query('SELECT * FROM users WHERE UserID = ?', [userId]);
+        return rows[0];
+    },
+
     checkPassword: async (password, hash) => {
         if (!password || !hash) {
             return false;

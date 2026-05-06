@@ -56,6 +56,34 @@ const authController = {
             success: true,
             data: hash
         });
+    },
+
+    me: async (req, res) => {
+        try {
+            const userId = req.user.id;
+            
+            const user = await authModel.findUserById(userId);
+
+            if (!user) {
+                return res.status(404).json({ success: false, message: "Người dùng không tồn tại" });
+            }
+
+            const userInfo = {
+                id: user.UserID,
+                username: user.FullName,
+                email: user.Email,
+                role: user.Role,
+                isActive: user.IsActive
+            };
+
+            return res.status(200).json({
+                success: true,
+                data: userInfo
+            });
+        } catch (err) {
+            console.log(err);
+            return res.status(500).json({ success: false, message: "Lỗi hệ thống máy chủ" });
+        }
     }
 };
 
