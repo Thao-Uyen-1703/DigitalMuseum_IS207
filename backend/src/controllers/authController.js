@@ -1,5 +1,5 @@
 const authModel = require('../models/authModel');
-const generateToken = require("../utils/generateToken");
+const tokenHelper = require("../utils/tokenHelper");
 
 const authController = {
     login: async (req, res) => {
@@ -26,36 +26,33 @@ const authController = {
                 return res.status(403).json({ success: false, message: "Tài khoản đã bị khóa" });
             }
 
-            const token = generateToken(user);
+            const accessToken = tokenHelper.generateAccessToken(user);
+            const refreshToken = tokenHelper.generateRefreshToken(user);
 
-            const userInfo = {
-                id: user.UserID,
-                username: user.FullName,
-                email: user.Email,
-                role: user.Role
-            };
+            await authModel.saveRefreshToken(user.UserID, refreshToken);
 
-            return res.status(200).json({
+            res.cookie('refreshToken', refreshToken, {
+                httpOnly: true,
+                secure: true,
+                sameSite: 'Strict',
+                maxAge: 7 * 24 * 60 * 60 * 1000
+            });
+
+            res.status(200).json({
                 success: true,
-                token,
-                data: userInfo
+                accessToken: accessToken,
+                user: {
+                    id: user.UserID,
+                    name: user.FullName,
+                    avatar: user.AvatarURL,
+                    role: user.Role
+                }
             });
 
         } catch (err) {
             console.log(err);
             return res.status(500).json({ success: false, message: "Lỗi hệ thống máy chủ" });
         }
-    },
-
-    getHashPass: async (req, res) => {
-        const { password } = req.body;
-
-        const hash = await authModel.hashPassword(password);
-
-        return res.status(200).json({
-            success: true,
-            data: hash
-        });
     },
 
     me: async (req, res) => {

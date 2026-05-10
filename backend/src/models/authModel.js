@@ -19,6 +19,17 @@ const authModel = {
 
         return await bcrypt.compare(password, hash);
     },
+
+    saveRefreshToken: async (userId, token) => {
+        const [results] = await db.query('UPDATE users SET refresh_token = ? WHERE UserID = ?', [token, userId]);
+
+        return results.affectedRows > 0;
+    },
+
+    clearToken: async (userId) => {
+        const [results] = await db.query('UPDATE users SET refresh_token = NULL WHERE UserID = ?', [userId]);
+        return results.affectedRows > 0;
+    }
 };
 
 module.exports = authModel;
