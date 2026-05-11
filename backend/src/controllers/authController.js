@@ -31,7 +31,6 @@ const authController = {
             });
 
         } catch (err) {
-            console.log(err);
             const statusCode = err.status || 500;
             const message = err.message || "Lỗi hệ thống máy chủ";
             return res.status(statusCode).json({ success: false, message: message });
@@ -68,7 +67,6 @@ const authController = {
             });
 
         } catch (err) {
-            console.log(err);
             const statusCode = err.status || 500;
             const message = err.message || "Lỗi hệ thống máy chủ";
             return res.status(statusCode).json({ success: false, message: message });
@@ -86,7 +84,6 @@ const authController = {
                 data: userInfo
             });
         } catch (err) {
-            console.log(err);
             const statusCode = err.status || 500;
             const message = err.message || "Lỗi hệ thống máy chủ";
             return res.status(statusCode).json({ success: false, message: message });
@@ -95,7 +92,6 @@ const authController = {
 
     refresh: async (req, res) => {
         try {
-            console.log(req);
             const refreshToken = req.cookies.refreshToken;
 
             const { user, accessToken, refreshToken: newRefreshToken } = await authServices.refreshToken(refreshToken);
@@ -118,7 +114,30 @@ const authController = {
                 }
             });
         } catch (err) {
-            console.log(err);
+            const statusCode = err.status || 500;
+            const message = err.message || "Lỗi hệ thống máy chủ";
+            return res.status(statusCode).json({ success: false, message: message });
+        }
+    },
+
+    logout: async (req, res) => {
+        try {
+            const refreshToken = req.cookies.refreshToken;
+
+            await authServices.logout(refreshToken);
+
+            res.cookie('refreshToken', '', {
+                httpOnly: true,
+                secure: true,
+                sameSite: 'Strict',
+                expires: new Date(0)
+            });
+
+            res.status(200).json({
+                success: true,
+                message: "Đăng xuất thành công"
+            });
+        } catch (err) {
             const statusCode = err.status || 500;
             const message = err.message || "Lỗi hệ thống máy chủ";
             return res.status(statusCode).json({ success: false, message: message });

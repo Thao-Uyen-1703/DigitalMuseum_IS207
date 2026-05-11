@@ -114,6 +114,25 @@ const authServices = {
         await authModel.saveRefreshToken(user.UserID, newRefreshToken);
 
         return { user, accessToken: newAccessToken, refreshToken: newRefreshToken };
+    },
+
+    logout: async (refreshToken) => {
+        if (!refreshToken) {
+            return true;
+        }
+
+        const decoded = tokenHelper.verifyRefreshToken(refreshToken);
+        if (!decoded) {
+            return true;
+        }
+
+        const user = await authModel.findUserById(decoded.id);
+        if (!user) {
+            return true;
+        }
+
+        await authModel.clearToken(user.UserID);
+        return true;
     }
 };
 
