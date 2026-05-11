@@ -78,11 +78,42 @@ const authServices = {
             id: user.UserID,
             username: user.FullName,
             email: user.Email,
-            role: user.Role,
-            isActive: user.IsActive
+            phone: user.Phone,
+            avatar: user.AvatarURL
         };
 
         return userInfo;
+    },
+
+    refreshToken: async (refreshToken) => {
+        if (!refreshToken) {
+            throw { status: 401, message: "Có lỗi xảy ra, vui lòng đăng nhập lại" };
+        }
+
+        const decoded = tokenHelper.verifyRefreshToken(refreshToken);
+        if (!decoded) {
+            throw { status: 401, message: "Có lỗi xảy ra, vui lòng đăng nhập lại" };
+        }
+
+        const user = await authModel.findUserById(decoded.id);
+        if (!user) {
+            throw { status: 404, message: "Người dùng không tồn tại" };
+        }
+
+        if (!user.IsActive) {
+            throw { status: 403, message: "Tài khoản đã bị khóa" };
+        }
+
+        if (user.refresh_token !== refreshToken) {
+            throw { status: 401, message: "Có lỗi xảy ra, vui lòng đăng nhập lại" };
+        }
+
+        const newAccessToken = tokenHelper.generateAccessToken(user);
+        const newRefreshToken = tokenHelper.generateRefreshToken(user);
+
+        await authModel.saveRefreshToken(user.UserID, newRefreshToken);
+
+        return { user, accessToken: newAccessToken, refreshToken: newRefreshToken };
     }
 };
 

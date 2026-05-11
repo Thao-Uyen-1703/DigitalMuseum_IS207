@@ -22,7 +22,15 @@ const tokenHelper = {
         {
             expiresIn: "7d",
         }
-    )}
+    )},
+
+    verifyRefreshToken: (token) => {
+        try {
+            return jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+        } catch (err) {
+            return null;
+        }
+    }
 }
 
 module.exports = tokenHelper;

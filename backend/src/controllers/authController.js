@@ -91,7 +91,39 @@ const authController = {
             const message = err.message || "Lỗi hệ thống máy chủ";
             return res.status(statusCode).json({ success: false, message: message });
         }
+    },
+
+    refresh: async (req, res) => {
+        try {
+            console.log(req);
+            const refreshToken = req.cookies.refreshToken;
+
+            const { user, accessToken, refreshToken: newRefreshToken } = await authServices.refreshToken(refreshToken);
+
+            res.cookie('refreshToken', newRefreshToken, {
+                httpOnly: true,
+                secure: true,
+                sameSite: 'Strict',
+                maxAge: 7 * 24 * 60 * 60 * 1000
+            });
+
+            res.status(200).json({
+                success: true,
+                accessToken: accessToken,
+                user: {
+                    id: user.UserID,
+                    name: user.FullName,
+                    avatar: user.AvatarURL,
+                    role: user.Role
+                }
+            });
+        } catch (err) {
+            console.log(err);
+            const statusCode = err.status || 500;
+            const message = err.message || "Lỗi hệ thống máy chủ";
+            return res.status(statusCode).json({ success: false, message: message });
+        }
     }
-};
+}
 
 module.exports = authController;
