@@ -14,8 +14,8 @@ const authController = {
 
             res.cookie('refreshToken', refreshToken, {
                 httpOnly: true,
-                secure: true,
-                sameSite: 'Strict',
+                secure: process.env.NODE_ENV === 'prod',
+                sameSite: 'Lax',
                 maxAge: 7 * 24 * 60 * 60 * 1000
             });
 
@@ -96,10 +96,10 @@ const authController = {
 
             const { user, accessToken, refreshToken: newRefreshToken } = await authServices.refreshToken(refreshToken);
 
-            res.cookie('refreshToken', newRefreshToken, {
+            res.cookie('refreshToken', '', {
                 httpOnly: true,
-                secure: true,
-                sameSite: 'Strict',
+                secure: process.env.NODE_ENV === 'prod',
+                sameSite: 'Lax',
                 maxAge: 7 * 24 * 60 * 60 * 1000
             });
 
