@@ -1,5 +1,3 @@
-const authModel = require('../models/authModel');
-const tokenHelper = require("../utils/tokenHelper");
 const registerValidator = require('../validators/registerValidator');
 const authServices = require('../services/authServices');
 
@@ -12,26 +10,7 @@ const authController = {
                 return res.status(400).json({ success: false, message: "Vui lòng nhập đầy đủ email và mật khẩu" });
             }
 
-            const user = await authModel.findUserByEmail(email);
-
-            if (!user) {
-                return res.status(401).json({ success: false, message: "Email hoặc mật khẩu không đúng" });
-            }
-
-            const isMatch = await authModel.checkPassword(password, user.PasswordHash);
-
-            if (!isMatch) {
-                return res.status(401).json({ success: false, message: "Email hoặc mật khẩu không đúng" });
-            }
-
-            if(!user.IsActive) {
-                return res.status(403).json({ success: false, message: "Tài khoản đã bị khóa" });
-            }
-
-            const accessToken = tokenHelper.generateAccessToken(user);
-            const refreshToken = tokenHelper.generateRefreshToken(user);
-
-            await authModel.saveRefreshToken(user.UserID, refreshToken);
+            const { user, accessToken, refreshToken } = await authServices.authenticateUser(email, password);
 
             res.cookie('refreshToken', refreshToken, {
                 httpOnly: true,
@@ -53,7 +32,9 @@ const authController = {
 
         } catch (err) {
             console.log(err);
-            return res.status(500).json({ success: false, message: "Lỗi hệ thống máy chủ" });
+            const statusCode = err.status || 500;
+            const message = err.message || "Lỗi hệ thống máy chủ";
+            return res.status(statusCode).json({ success: false, message: message });
         }
     },
 
@@ -97,20 +78,8 @@ const authController = {
     me: async (req, res) => {
         try {
             const userId = req.user.id;
-            
-            const user = await authModel.findUserById(userId);
 
-            if (!user) {
-                return res.status(404).json({ success: false, message: "Người dùng không tồn tại" });
-            }
-
-            const userInfo = {
-                id: user.UserID,
-                username: user.FullName,
-                email: user.Email,
-                role: user.Role,
-                isActive: user.IsActive
-            };
+            const userInfo = await authServices.getUserProfile(userId);
 
             return res.status(200).json({
                 success: true,
@@ -118,7 +87,9 @@ const authController = {
             });
         } catch (err) {
             console.log(err);
-            return res.status(500).json({ success: false, message: "Lỗi hệ thống máy chủ" });
+            const statusCode = err.status || 500;
+            const message = err.message || "Lỗi hệ thống máy chủ";
+            return res.status(statusCode).json({ success: false, message: message });
         }
     }
 };
