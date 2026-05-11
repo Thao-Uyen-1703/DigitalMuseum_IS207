@@ -1,5 +1,4 @@
 const db = require('../config/mysql');
-const bcrypt = require('bcrypt');
 
 const authModel = {
     findUserByEmail: async (email) => {
@@ -12,14 +11,6 @@ const authModel = {
         return rows[0];
     },
 
-    checkPassword: async (password, hash) => {
-        if (!password || !hash) {
-            return false;
-        }
-
-        return await bcrypt.compare(password, hash);
-    },
-
     saveRefreshToken: async (userId, token) => {
         const [results] = await db.query('UPDATE users SET refresh_token = ? WHERE UserID = ?', [token, userId]);
 
@@ -28,6 +19,12 @@ const authModel = {
 
     clearToken: async (userId) => {
         const [results] = await db.query('UPDATE users SET refresh_token = NULL WHERE UserID = ?', [userId]);
+        return results.affectedRows > 0;
+    },
+
+    createUser: async ({name, email, phone, password}) => {
+        const sql = 'INSERT INTO users(FullName, Email, PasswordHash, Phone) VALUES (?, ?, ?, ?)';
+        const [results] = await db.query(sql, [name, email, password, phone]);
         return results.affectedRows > 0;
     }
 };

@@ -1,5 +1,7 @@
 const authModel = require('../models/authModel');
 const tokenHelper = require("../utils/tokenHelper");
+const registerValidator = require('../validators/registerValidator');
+const authServices = require('../services/authServices');
 
 const authController = {
     login: async (req, res) => {
@@ -52,6 +54,43 @@ const authController = {
         } catch (err) {
             console.log(err);
             return res.status(500).json({ success: false, message: "Lỗi hệ thống máy chủ" });
+        }
+    },
+
+    register: async (req, res) => {
+        try {
+            if (!req.body) {
+                return res.status(400).json({ success: false, message: "Vui lòng nhập đầy đủ thông tin" });
+            }
+
+            const { error, value } = registerValidator.validate(req.body, { abortEarly: false });
+
+            if(error || !value) {
+                const errorDetails = error ? {} : { body: "Dữ liệu không hợp lệ" };
+                if(error) {
+                    error.details.forEach(detail => {
+                        errorDetails[detail.path[0]] = detail.message;
+                    });
+                }
+                
+                return res.status(400).json({
+                    success: false,
+                    errors: errorDetails 
+                });
+            }
+
+            await authServices.registerUser(value);
+
+            return res.status(201).json({
+                success: true,
+                message: "Đăng ký tài khoản thành công!"
+            });
+
+        } catch (err) {
+            console.log(err);
+            const statusCode = err.status || 500;
+            const message = err.message || "Lỗi hệ thống máy chủ";
+            return res.status(statusCode).json({ success: false, message: message });
         }
     },
 
