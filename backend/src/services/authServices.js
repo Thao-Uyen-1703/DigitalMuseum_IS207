@@ -7,17 +7,17 @@ const authServices = {
         const user = await authModel.findUserByEmail(email);
 
         if (!user) {
-            throw { status: 401, message: "Email hoặc mật khẩu không đúng" };
+            throw { status: 400, message: "Email hoặc mật khẩu không đúng" };
         }
 
         const isMatch = await authServices.checkPassword(password, user.PasswordHash);
 
         if (!isMatch) {
-            throw { status: 401, message: "Email hoặc mật khẩu không đúng" };
+            throw { status: 400, message: "Email hoặc mật khẩu không đúng" };
         }
 
         if(!user.IsActive) {
-            throw { status: 403, message: "Tài khoản đã bị khóa" };
+            throw { status: 400, message: "Tài khoản đã bị khóa" };
         }
 
         const accessToken = tokenHelper.generateAccessToken(user);
@@ -97,11 +97,11 @@ const authServices = {
 
         const user = await authModel.findUserById(decoded.id);
         if (!user) {
-            throw { status: 404, message: "Người dùng không tồn tại" };
+            throw { status: 401, message: "Người dùng không tồn tại" };
         }
 
         if (!user.IsActive) {
-            throw { status: 403, message: "Tài khoản đã bị khóa" };
+            throw { status: 401, message: "Tài khoản đã bị khóa" };
         }
 
         if (user.refresh_token !== refreshToken) {

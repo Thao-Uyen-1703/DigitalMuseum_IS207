@@ -17,7 +17,7 @@ const diadiemController = {
             const diadiem = await diadiemModel.getLocationById(id);
 
             if(!diadiem) {
-                return res.status(404).json({ success: false, message: 'Không tìm thấy địa điểm' });
+                return res.status(400).json({ success: false, message: 'Không tìm thấy địa điểm' });
             }
 
             res.status(200).json({ success: true, data: diadiem });

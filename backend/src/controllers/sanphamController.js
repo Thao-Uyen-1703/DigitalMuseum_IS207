@@ -17,7 +17,7 @@ const productController = {
             const product = await productModel.getProductById(id);
 
             if(!product) {
-                return res.status(404).json({ success: false, message: 'Không tìm thấy sản phẩm' });
+                return res.status(400).json({ success: false, message: 'Không tìm thấy sản phẩm' });
             }
 
             res.status(200).json({ success: true, data: product });
