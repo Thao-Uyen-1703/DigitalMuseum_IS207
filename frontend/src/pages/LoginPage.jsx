@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import Logo from '../components/layout/Logo';
 import api from '../api/axiosClient';
-import { toast } from 'sonner';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export default function LoginPage() {
+  const { login } = useAuth();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const redirectUrl = searchParams.get('redirect') || '/';
@@ -37,9 +38,8 @@ export default function LoginPage() {
       });
 
       const { accessToken } = response.data;
-      localStorage.setItem('access_token', accessToken);
 
-      toast.success('Đăng nhập thành công');
+      login(accessToken);
 
       navigate(redirectUrl);
 
