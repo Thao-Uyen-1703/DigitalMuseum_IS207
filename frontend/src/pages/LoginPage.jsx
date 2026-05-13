@@ -2,8 +2,15 @@ import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import Logo from '../components/layout/Logo';
 import api from '../api/axiosClient';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export default function LoginPage() {
+  const { login } = useAuth();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const redirectUrl = searchParams.get('redirect') || '/';
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -30,18 +37,15 @@ export default function LoginPage() {
         password: password
       });
 
-      console.log(response);
+      const { accessToken } = response.data;
 
-      const { accessToken } = response.data.accessToken;
-      localStorage.setItem('access_token', accessToken);
+      login(accessToken);
 
-      toast.success('Đăng nhập thành công');
+      navigate(redirectUrl);
 
     } catch (err) {
       if (err.response && err.response.data) {
         setError(err.response.data.message || 'Đăng nhập thất bại. Vui lòng thử lại.');
-      } else {
-        setError('Lỗi kết nối server.');
       }
     } finally {
       setLoading(false);

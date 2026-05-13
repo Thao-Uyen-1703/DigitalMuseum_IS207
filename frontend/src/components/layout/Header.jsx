@@ -1,14 +1,16 @@
 import { Link } from 'react-router-dom';
-import { Search, ShoppingCart, User, Menu, X } from 'lucide-react';
+import { Search, ShoppingCart, User, Menu, X, ChevronDown, UserCircle, Package, LogOut } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import Logo from '../layout/Logo';
+import { useAuth } from '../../context/AuthContext'
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  const cartItemsCount = 60;
+  const { user, logout } = useAuth();
+
+  const cartItemsCount = 0;
   const userMenuRef = useRef(null);
 
   const linkClass = 'relative text-gray-700 text-sm font-semibold py-2 transition-colors duration-300 hover:text-amber-600 group';
@@ -80,24 +82,53 @@ export default function Header() {
               </span>
             )}
           </button>
+          {/* USER MENU SECTION */}
           <div className="relative" ref={userMenuRef}>
             <button 
               onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-              className={`p-2 rounded-full transition-all cursor-pointer ${isUserMenuOpen ? 'bg-amber-100 text-amber-600' : 'hover:bg-amber-50 text-amber-500'}`}
+              className={`flex items-center gap-1 p-1 rounded-full transition-all cursor-pointer ${
+                isUserMenuOpen ? 'bg-amber-100' : 'hover:bg-amber-50'
+              }`}
             >
-              <User size={20} />
+              {user ? (
+                <div className="flex items-center gap-1">
+                  {user.avatar ? (
+                    <img 
+                      src={user.avatar} 
+                      alt="Avatar" 
+                      className="w-8 h-8 rounded-full object-cover border border-amber-200"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center text-white">
+                      <User size={18} />
+                    </div>
+                  )}
+                  <ChevronDown 
+                    size={14} 
+                    className={`text-amber-600 transition-transform duration-200 ${isUserMenuOpen ? 'rotate-180' : ''}`} 
+                  />
+                </div>
+              ) : (
+                <div className="p-1.5 text-amber-500">
+                  <User size={20} />
+                </div>
+              )}
             </button>
 
             {/* Dropdown Menu */}
             {isUserMenuOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-lg shadow-lg py-2 z-50 animate-in fade-in zoom-in duration-200">
-                {!isLoggedIn ? (
+              <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-100 rounded-xl shadow-xl py-2 z-50 animate-in fade-in zoom-in duration-200">
+                {!user ? (
                   <>
-                    <Link to="/login" className={dropdownItemClass} onClick={() => setIsUserMenuOpen(false)}>Đăng nhập</Link>
-                    <Link to="/register" className={dropdownItemClass} onClick={() => setIsUserMenuOpen(false)}>Đăng ký</Link>
+                    <Link to="/dang-nhap" className={dropdownItemClass} onClick={() => setIsUserMenuOpen(false)}>Đăng nhập</Link>
+                    <Link to="/dang-ky" className={dropdownItemClass} onClick={() => setIsUserMenuOpen(false)}>Đăng ký</Link>
                   </>
                 ) : (
                   <>
+                    <div className="px-4 py-2 border-b border-gray-50 mb-1">
+                      <p className="text-xs text-gray-400">Tài khoản</p>
+                      <p className="text-sm font-bold text-gray-700 truncate">{user.name || user.email}</p>
+                    </div>
                     <Link to="/profile" className={dropdownItemClass} onClick={() => setIsUserMenuOpen(false)}>
                       <UserCircle size={16} /> Thông tin cá nhân
                     </Link>
@@ -108,7 +139,7 @@ export default function Header() {
                     <button 
                       className={`${dropdownItemClass} w-full text-red-500 hover:text-red-600 hover:bg-red-50`}
                       onClick={() => {
-                        setIsLoggedIn(false);
+                        logout();
                         setIsUserMenuOpen(false);
                       }}
                     >
