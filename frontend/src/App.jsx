@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom';
 import './App.css';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
+import ProductListPage from './pages/ProductListPage';
 import { Toaster } from 'sonner';
 
 function App() {
@@ -11,6 +12,7 @@ function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/dang-nhap" element={<LoginPage />} />
+        <Route path="/cua-hang" element={<ProductListPage />} />
       </Routes>
     </>
   )
