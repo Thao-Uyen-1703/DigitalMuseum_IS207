@@ -1,11 +1,11 @@
 
 const express = require('express');
 const router = express.Router();
-const sanphamController = require('../controllers/sanphamController');
+const productController = require('../controllers/productController');
 
 // Đọc danh sách (READ ALL) -> GET /api/users/
-router.get('/', sanphamController.getAllProducts);
+router.get('/', productController.getAllProductByFilters);
 
-router.get('/:id', sanphamController.findProductById);
+// router.get('/:id', productController.findProductById);
 
 module.exports = router;
