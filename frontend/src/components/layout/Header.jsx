@@ -41,15 +41,30 @@ export default function Header() {
         {/* Navigation với Underline Animation */}
         <nav className="hidden md:flex flex-1 mx-8 lg:mx-12">
           <ul className="flex gap-6 lg:gap-8 list-none m-0 p-0">
-            {['Trang chủ', 'Bảo tàng số', 'Cửa hàng', 'Tìm hiểu'].map((item) => (
-              <li key={item}>
-                <Link to="#" className={linkClass}>
-                  {item}
-                  {/* Thanh gạch chân chạy từ trái sang phải khi hover */}
-                  <span className="absolute bottom-0 left-0 w-full h-0.5 bg-amber-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
-                </Link>
-              </li>
-            ))}
+            <li>
+              <Link to="/" className={linkClass}>
+                Trang chủ
+                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-amber-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
+              </Link>
+            </li>
+            <li>
+              <Link to="#" className={linkClass}>
+                Bảo tàng số
+                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-amber-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
+              </Link>
+            </li>
+            <li>
+              <Link to="/cua-hang" className={linkClass}>
+                Cửa hàng
+                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-amber-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
+              </Link>
+            </li>
+            <li>
+              <Link to="#" className={linkClass}>
+                Tìm hiểu
+                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-amber-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
+              </Link>
+            </li>
           </ul>
         </nav>
 
