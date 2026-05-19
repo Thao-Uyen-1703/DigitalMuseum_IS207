@@ -11,6 +11,11 @@ export default {
         sans: ["system-ui", "sans-serif"],
       },
       colors: {
+        lacani: {
+          ink: '#0b2621',
+          cream: '#f7ede0',
+          gold: '#b5995e',
+        },
         teal: {
           50: "#f0fdf9",
           100: "#d0f5f0",

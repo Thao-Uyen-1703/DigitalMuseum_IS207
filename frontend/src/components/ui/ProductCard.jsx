@@ -1,5 +1,6 @@
 import { ShoppingCart, MapPin } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import noImage from '../../assets/no-image.png';
 
 export default function ProductCard({ product }) {
@@ -83,9 +84,14 @@ export default function ProductCard({ product }) {
         )}
 
         <div className="w-full flex justify-center mt-5">
-          <button className="w-full sm:w-auto bg-amber-600 hover:bg-amber-700 text-white px-6 py-2.5 rounded-lg flex items-center justify-center gap-2 transition-colors font-medium text-sm sm:text-base">
-            Xem chi tiết
-          </button>
+          <Link
+            to={`/san-pham/${product.SlugName || ''}`}
+            className="w-full"
+          >
+            <button className="w-full sm:w-auto bg-amber-600 hover:bg-amber-700 text-white px-6 py-2.5 rounded-lg flex items-center justify-center gap-2 transition-colors font-medium text-sm sm:text-base">
+              Xem chi tiết
+            </button>
+          </Link>
         </div>
       </div>
     </div>
