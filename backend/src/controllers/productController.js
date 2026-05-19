@@ -32,21 +32,38 @@ const productController = {
         }
     },
 
-    // findProductById: async (req, res) => {
-    //     try {
-    //         const id = req.params.id;
-    //         const product = await productModel.getProductById(id);
+    getProductDetails: async (req, res) => {
+        try {
+            const slug = req.params.name;
 
-    //         if(!product) {
-    //             return res.status(400).json({ success: false, message: 'Không tìm thấy sản phẩm' });
-    //         }
+            if (!slug) {
+                return res.status(404).json({ success: false, message: 'Không tìm thấy sản phẩm' });
+            }
 
-    //         res.status(200).json({ success: true, data: product });
-    //     } catch (error) {
-    //         console.error(error);
-    //         res.status(500).json({ success: false, message: 'Lỗi máy chủ' });
-    //     }
-    // },
+            const results = await productServices.getProductDetails(slug);
+
+            res.status(200).json({ success: true, data: results });
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ success: false, message: 'Lỗi máy chủ' });
+        }
+    },
+
+    findProductById: async (req, res) => {
+        try {
+            const id = req.params.id;
+            const product = await productModel.getProductById(id);
+
+            if(!product) {
+                return res.status(400).json({ success: false, message: 'Không tìm thấy sản phẩm' });
+            }
+
+            res.status(200).json({ success: true, data: product });
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ success: false, message: 'Lỗi máy chủ' });
+        }
+    },
 };
 
 module.exports = productController;
