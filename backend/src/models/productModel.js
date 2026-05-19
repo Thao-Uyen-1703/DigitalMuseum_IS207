@@ -69,13 +69,43 @@ const productModel = {
         }
 
         const [result] = await db.query(sql, queryParams);
-        return result[0].total; // Trả về một con số (Ví dụ: 45)
+        return result[0].total;
+    },
+
+    getProductBySlug: async (slug) => {
+        const [rows] = await db.query('SELECT * FROM products WHERE SlugName = ?', [slug]);
+        return rows[0];
     },
 
     getProductById: async (id) => {
-        const [rows] = await db.query('SELECT * FROM products WHERE ProductID = ?', [id]);
+        const [rows] = await db.query('SELECT * FROM Products WHERE ProductID = ?', [id]);
         return rows[0];
     },
+
+    getReviewList: async (id) => {
+        const query = `
+            SELECT 
+                u.FullName, 
+                r.Comment, 
+                r.Rating, 
+                r.ReviewDate 
+            FROM Reviews r
+            INNER JOIN Users u ON r.UserID = u.UserID
+            WHERE r.ProductID = ?
+        `;
+        const [rows] = await db.query(query, [id]);
+        return rows;
+    },
+
+    getCategoryInfo: async (id) => {
+        const [rows] = await db.query('SELECT CategoryName, Description FROM categories WHERE CategoryID = ?', [id]);
+        return rows[0];
+    },
+
+    getLocationInfo: async (id) => {
+        const [rows] = await db.query('SELECT LocationName, Details, ThumbnailURL FROM Locations WHERE LocationID = ?', [id]);
+        return rows[0];
+    }
 };
 
 module.exports = productModel;

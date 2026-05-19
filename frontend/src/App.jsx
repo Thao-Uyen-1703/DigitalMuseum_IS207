@@ -3,6 +3,7 @@ import './App.css';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import ProductListPage from './pages/ProductListPage';
+import ProductDetails from './pages/ProductDetails';
 import { Toaster } from 'sonner';
 
 function App() {
@@ -13,6 +14,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/dang-nhap" element={<LoginPage />} />
         <Route path="/cua-hang" element={<ProductListPage />} />
+        <Route path="/san-pham/:slug" element={<ProductDetails />} />
       </Routes>
     </>
   )
