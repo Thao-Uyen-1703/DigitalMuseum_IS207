@@ -9,6 +9,7 @@ import {
   Sparkles,
   Star,
 } from 'lucide-react';
+import { useCart } from '../context/CartContext';
 import { toast } from 'sonner';
 import api from '../api/axiosClient';
 import MainLayout from '../components/MainLayout';
@@ -17,6 +18,7 @@ import ImageDisplay from '../components/ui/ImageDisplay';
 
 export default function ProductDetails() {
   const { slug } = useParams();
+  const { addToCart } = useCart();
   const [product, setProduct] = useState(null);
   const [location, setLocation] = useState(null);
   const [reviews, setReviews] = useState([]);
@@ -131,6 +133,13 @@ export default function ProductDetails() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
+
+  const handleAddToCart = async() => {
+    if(!product) {
+      return;
+    }
+    await addToCart(product, quantity, product.ImageURL);
+  }
 
   return (
     <MainLayout>
@@ -259,7 +268,10 @@ export default function ProductDetails() {
                 </button>
               </div>
 
-              <button className="flex-grow bg-[#b5995e] hover:brightness-110 active:scale-[0.98] text-white text-base font-bold py-4 px-[30px] shadow transition-all duration-300 flex items-center justify-center gap-2">
+              <button 
+                onClick={handleAddToCart}
+                className="flex-grow bg-[#b5995e] hover:brightness-110 active:scale-[0.98] text-white text-base font-bold py-4 px-[30px] shadow transition-all duration-300 flex items-center justify-center gap-2"
+              >
                 <ShoppingCart className="h-5 w-5" /> THÊM VÀO GIỎ
               </button>
             </div>
