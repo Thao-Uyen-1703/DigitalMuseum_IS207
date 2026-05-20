@@ -5,6 +5,7 @@ import LoginPage from './pages/LoginPage';
 import ProductListPage from './pages/ProductListPage';
 import ProductDetails from './pages/ProductDetails';
 import { Toaster } from 'sonner';
+import CartPage from './pages/CartPage';
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
         <Route path="/dang-nhap" element={<LoginPage />} />
         <Route path="/cua-hang" element={<ProductListPage />} />
         <Route path="/san-pham/:slug" element={<ProductDetails />} />
+        <Route path="/gio-hang" element={<CartPage />} />
       </Routes>
     </>
   )
