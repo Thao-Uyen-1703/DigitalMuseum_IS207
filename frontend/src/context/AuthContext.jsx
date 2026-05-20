@@ -9,22 +9,38 @@ export default function AuthProvider ({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      try {
-        const decoded = jwtDecode(token);
-        
-        const currentTime = Date.now() / 1000;
-        if (decoded.exp < currentTime) {
-          logout();
-        } else {
-          setUser(decoded);
+    const initializeAuth = async () => {
+      const token = localStorage.getItem('access_token');
+      
+      if (token) {
+        try {
+          const decoded = jwtDecode(token);
+          const currentTime = Date.now() / 1000;
+          
+          if (decoded.exp < currentTime) {
+            try {
+              const response = await api.post('/auth/refresh'); 
+              
+              const newAccessToken = response.data.accessToken;
+              
+              localStorage.setItem('access_token', newAccessToken);
+              setUser(jwtDecode(newAccessToken));
+              
+            } catch (refreshError) {
+              console.error("Phiên đăng nhập đã hết hạn hoàn toàn", refreshError);
+              logout(false);
+            }
+          } else {
+            setUser(decoded);
+          }
+        } catch (error) {
+          logout(false);
         }
-      } catch (error) {
-        localStorage.removeItem('access_token');
       }
-    }
-    setLoading(false);
+      setLoading(false);
+    };
+
+    initializeAuth();
   }, []);
 
   const login = (token) => {
