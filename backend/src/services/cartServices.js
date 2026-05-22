@@ -19,7 +19,8 @@ const cartServices = {
 
         if (existingItem) {
             const newQuantity = existingItem.Quantity + quantity;
-            await cartModel.updateQuantity(existingItem.CartItemID, newQuantity);
+            // Sửa: truyền cartId và productId
+            await cartModel.updateQuantity(cartId, productId, newQuantity);
         } else {
             await cartModel.addItem(cartId, productId, quantity);
         }
@@ -43,7 +44,8 @@ const cartServices = {
 
                 if (existingItem) {
                     const newQuantity = existingItem.Quantity + quantity;
-                    await cartModel.updateQuantity(existingItem.CartItemID, newQuantity);
+                    // Sửa: truyền cartId và productId thay vì CartItemID
+                    await cartModel.updateQuantity(cartId, productId, newQuantity);
                 } else {
                     await cartModel.addItem(cartId, productId, quantity);
                 }
@@ -67,7 +69,8 @@ const cartServices = {
             throw { status: 404, message: "Không tìm thấy sản phẩm trong giỏ hàng" }
         }
 
-        await cartModel.updateQuantity(existingItem.CartItemID, quantity);
+        // Sửa: truyền cartId và id (chính là productId)
+        await cartModel.updateQuantity(cartId, id, quantity);
 
         return true;
     },
@@ -85,7 +88,8 @@ const cartServices = {
             throw { status: 404, message: "Không tìm thấy sản phẩm trong giỏ hàng" }
         }
 
-        await cartModel.removeCartItem(existingItem.CartItemID);
+        // Sửa: truyền cartId và id (chính là productId)
+        await cartModel.removeCartItem(cartId, id);
 
         return true;
     }
