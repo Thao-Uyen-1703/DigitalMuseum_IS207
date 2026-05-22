@@ -10,6 +10,7 @@ const productRoute = require('./routes/productRoute');
 const diadiemRoute = require('./routes/diadiemRoute');
 const authRoute = require('./routes/authRoute');
 const cartRoute = require('./routes/cartRoute');
+const shipmentRoute = require('./routes/shipmentRoute');
 
 const app = express();
 const port = 3000;
@@ -25,6 +26,7 @@ app.use('/api/product', productRoute);
 app.use('/api/diadiem', diadiemRoute);
 app.use('/api/auth', authRoute);
 app.use('/api/cart', cartRoute);
+app.use('/api/shipment-methods', shipmentRoute);
 
 app.listen(port, () => {
     console.log(`Running at port:${port}`);
