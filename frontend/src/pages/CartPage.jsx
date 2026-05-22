@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Trash2, Plus, Minus, Ticket, ArrowLeft, ShoppingBag } from 'lucide-react';
 import MainLayout from '../components/MainLayout';
 import { useCart } from '../context/CartContext';
@@ -7,7 +7,8 @@ import ImageDisplay from '../components/ui/ImageDisplay';
 
 export default function CartPage() {
   // Lấy thêm updateQuantity và removeFromCart từ Context
-  const { cart, updateCartItemQuantity, removeFromCart } = useCart(); 
+  const { cart, updateCartItemQuantity, removeFromCart } = useCart();
+  const navigate = useNavigate(); 
 
   // 1. STATE QUẢN LÝ CÁC SẢN PHẨM ĐƯỢC CHỌN (Mảng chứa danh sách các productId)
   const [selectedItems, setSelectedItems] = useState([]);
@@ -69,8 +70,12 @@ export default function CartPage() {
   // Hàm xử lý xóa nhiều mục đã chọn
   const handleRemoveSelected = () => {
     removeFromCart(selectedItems);
-    setSelectedItems([]); // Reset lại mảng chọn sau khi xóa
+    setSelectedItems([]);
   };
+
+  const handleCheckout = () => {
+    navigate('/thanh-toan', { state: { checkoutItems: selectedCartItems, subtotal: finalTotal } });
+  }
 
   return (
     <MainLayout>
@@ -268,6 +273,7 @@ export default function CartPage() {
 
                   <button 
                     disabled={selectedItems.length === 0}
+                    onClick={handleCheckout}
                     className={`w-full font-bold text-base py-4 rounded-xl shadow transition duration-300 flex items-center justify-center gap-2
                       ${selectedItems.length === 0 
                         ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none' 
