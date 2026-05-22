@@ -6,6 +6,7 @@ import ProductListPage from './pages/ProductListPage';
 import ProductDetails from './pages/ProductDetails';
 import { Toaster } from 'sonner';
 import CartPage from './pages/CartPage';
+import CheckoutPage from './pages/CheckoutPage';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route path="/cua-hang" element={<ProductListPage />} />
         <Route path="/san-pham/:slug" element={<ProductDetails />} />
         <Route path="/gio-hang" element={<CartPage />} />
+        <Route path="/thanh-toan" element={<CheckoutPage />} />
       </Routes>
     </>
   )
