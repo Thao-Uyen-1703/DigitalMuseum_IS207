@@ -66,8 +66,8 @@ const checkoutModel = {
             // 1. Lưu thông tin vào bảng orders
             const OrderTracking = this.generateTrackingNumber();
             const [orderResult] = await connection.query(
-                `INSERT INTO orders (UserID, AddressID, CouponID, GuestDetails, OrderTracking, TotalAmount, Status) 
-                 VALUES (?, ?, NULL, ?, ?, ?, 'Pending')`,
+                `INSERT INTO orders (UserID, AddressID, CouponID, OrderDate, GuestDetails, TotalAmount, Status) 
+                 VALUES (?, ?, NULL, NOW(), ?, ?, 'Pending')`,
                 [
                     orderData.userId, 
                     orderData.addressId, 
@@ -101,9 +101,9 @@ const checkoutModel = {
 
             // 4. Lưu thông tin bảng payments
             await connection.query(
-                `INSERT INTO payments (OrderID, PaymentMethod, PaymentStatus) 
-                 VALUES (?, ?, 'Pending')`,
-                [orderId, orderData.paymentMethod]
+                `INSERT INTO payments (OrderID, PaymentMethod, Amount, PaidDate) 
+                 VALUES (?, ?, ?, NOW())`,
+                [orderId, orderData.paymentMethod, orderData.totalAmount]
             );
 
             // Xác nhận transaction

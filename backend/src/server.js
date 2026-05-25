@@ -12,6 +12,7 @@ const authRoute = require('./routes/authRoute');
 const cartRoute = require('./routes/cartRoute');
 const shipmentRoute = require('./routes/shipmentRoute');
 const checkoutRoute = require('./routes/checkoutRoute');
+const trackingRoute = require('./routes/trackingRoute');
 
 const app = express();
 const port = 3000;
@@ -29,6 +30,7 @@ app.use('/api/auth', authRoute);
 app.use('/api/cart', cartRoute);
 app.use('/api/shipment-methods', shipmentRoute);
 app.use('/api/checkout', checkoutRoute);
+app.use('/api/tracking', trackingRoute);
 
 app.listen(port, () => {
     console.log(`Running at port:${port}`);
