@@ -7,11 +7,12 @@ import ProductDetails from './pages/ProductDetails';
 import { Toaster } from 'sonner';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
+import TrackingPage from './pages/TrackingPage';
 
 function App() {
   return (
     <>
-      <Toaster position="top-right" richColors closeButton />
+      <Toaster position="top-right" richColors closeButton duration={1000} />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/dang-nhap" element={<LoginPage />} />
@@ -19,6 +20,7 @@ function App() {
         <Route path="/san-pham/:slug" element={<ProductDetails />} />
         <Route path="/gio-hang" element={<CartPage />} />
         <Route path="/thanh-toan" element={<CheckoutPage />} />
+        <Route path="/tra-cuu" element={<TrackingPage />} />
       </Routes>
     </>
   )
