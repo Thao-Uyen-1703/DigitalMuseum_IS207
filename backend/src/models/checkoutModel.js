@@ -25,7 +25,7 @@ const checkoutModel = {
     // Tạo địa chỉ mới cho user
     createUserAddress: async (data) => {
         const [result] = await db.query(
-            `INSERT INTO useraddresses (UserID, FullName, phone, AddressLine, District, City, Country, isDefault) 
+            `INSERT INTO useraddresses (UserID, ReceiverName, Phone, AddressLine, District, City, Country, isDefault) 
              VALUES (?, ?, ?, ?, ?, ?, 'Vietnam', 0)`,
             [data.userId, data.fullName, data.phone, data.addressLine, data.district, data.city]
         );
@@ -41,6 +41,22 @@ const checkoutModel = {
         return rows.length > 0 ? rows[0] : null;
     },
 
+    generateTrackingNumber: () => {
+        const today = new Date();
+        const dd = String(today.getDate()).padStart(2, '0');
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const yy = String(today.getFullYear()).slice(-2);
+        const dateStr = `${dd}${mm}${yy}`;
+
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let randomStr = '';
+        for (let i = 0; i < 6; i++) {
+            randomStr += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+
+        return `LCN${dateStr}${randomStr}`;
+    },
+
     // Xử lý ghi dữ liệu đơn hàng bằng Transaction
     createOrderTransaction: async (orderData) => {
         const connection = await db.getConnection();
@@ -48,13 +64,15 @@ const checkoutModel = {
 
         try {
             // 1. Lưu thông tin vào bảng orders
+            const OrderTracking = this.generateTrackingNumber();
             const [orderResult] = await connection.query(
                 `INSERT INTO orders (UserID, AddressID, CouponID, OrderDate, GuestDetails, TotalAmount, Status) 
                  VALUES (?, ?, NULL, NOW(), ?, ?, 'Pending')`,
                 [
                     orderData.userId, 
                     orderData.addressId, 
-                    orderData.guestDetails, 
+                    orderData.guestDetails,
+                    OrderTracking,
                     orderData.totalAmount
                 ]
             );
@@ -90,7 +108,7 @@ const checkoutModel = {
 
             // Xác nhận transaction
             await connection.commit();
-            return orderId;
+            return OrderTracking;
 
         } catch (error) {
             // Có lỗi xảy ra thì hoàn tác lại toàn bộ dữ liệu vừa insert
