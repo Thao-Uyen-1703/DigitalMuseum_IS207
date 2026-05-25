@@ -25,7 +25,7 @@ const checkoutModel = {
     // Tạo địa chỉ mới cho user
     createUserAddress: async (data) => {
         const [result] = await db.query(
-            `INSERT INTO useraddresses (UserID, FullName, phone, AddressLine, District, City, Country, isDefault) 
+            `INSERT INTO useraddresses (UserID, ReceiverName, Phone, AddressLine, District, City, Country, isDefault) 
              VALUES (?, ?, ?, ?, ?, ?, 'Vietnam', 0)`,
             [data.userId, data.fullName, data.phone, data.addressLine, data.district, data.city]
         );
@@ -68,6 +68,7 @@ const checkoutModel = {
             const trackingNum = this.generateTrackingNumber();
 
             // 1. Lưu thông tin vào bảng orders
+            const OrderTracking = this.generateTrackingNumber();
             const [orderResult] = await connection.query(
                 `INSERT INTO orders (UserID, AddressID, CouponID, OrderDate, GuestDetails, OrderTracking ,TotalAmount, Status) 
                  VALUES (?, ?, NULL, NOW(), ?, ? , ?, 'Pending')`,

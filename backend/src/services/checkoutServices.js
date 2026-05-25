@@ -87,14 +87,9 @@ const checkoutServices = {
             items: itemsWithPrices
         };
 
-        const newOrderId = await checkoutModel.createOrderTransaction(orderData);
+        const orderTracking = await checkoutModel.createOrderTransaction(orderData);
 
-        return {
-            orderId: newOrderId,
-            totalAmount,
-            status: "Pending",
-            message: "Tạo đơn hàng thành công"
-        };
+        return orderTracking;
     }
 };
 

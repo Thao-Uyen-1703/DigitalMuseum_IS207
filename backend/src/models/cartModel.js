@@ -1,5 +1,4 @@
 const db = require('../config/mysql');
-const { removeCartItem } = require('../services/cartServices');
 
 const cartModel = {
     getCart: async (id) => {
@@ -24,8 +23,9 @@ const cartModel = {
         return result.insertId;
     },
 
+    // Bỏ CartItemID đi, chỉ cần lấy Quantity
     getItemInCart: async (cartId, productId) => {
-        const [rows] = await db.query('SELECT CartItemID, Quantity FROM cartitems WHERE CartID = ? AND ProductID = ?', [cartId, productId]);
+        const [rows] = await db.query('SELECT Quantity FROM cartitems WHERE CartID = ? AND ProductID = ?', [cartId, productId]);
         return rows.length > 0 ? rows[0] : null;
     },
 
@@ -33,12 +33,14 @@ const cartModel = {
         await db.query('INSERT INTO cartitems (CartID, ProductID, Quantity) VALUES (?, ?, ?)', [cartId, productId, quantity]);
     },
 
-    updateQuantity: async (cartItemId, newQuantity) => {
-        await db.query('UPDATE cartitems SET Quantity = ? WHERE CartItemID = ?', [newQuantity, cartItemId]);
+    // Sửa điều kiện WHERE thành CartID và ProductID
+    updateQuantity: async (cartId, productId, newQuantity) => {
+        await db.query('UPDATE cartitems SET Quantity = ? WHERE CartID = ? AND ProductID = ?', [newQuantity, cartId, productId]);
     },
 
-    removeCartItem: async (cartItemId) => {
-        await db.query('DELETE FROM cartitems WHERE CartItemID = ?', [cartItemId]);
+    // Sửa điều kiện WHERE thành CartID và ProductID
+    removeCartItem: async (cartId, productId) => {
+        await db.query('DELETE FROM cartitems WHERE CartID = ? AND ProductID = ?', [cartId, productId]);
     }
 };
 

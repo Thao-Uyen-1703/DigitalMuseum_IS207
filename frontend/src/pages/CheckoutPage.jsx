@@ -13,7 +13,7 @@ import ImageDisplay from '../components/ui/ImageDisplay';
 export default function CheckoutPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { setCart } = useCart(); 
+  const { removeFromCart } = useCart(); 
 
   // 1. STATE DỮ LIỆU ĐƠN HÀNG VÀ VẬN CHUYỂN
   const [checkoutItems, setCheckoutItems] = useState([]);
@@ -37,7 +37,6 @@ export default function CheckoutPage() {
 
   const formatPrice = (value) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value || 0);
 
-  // ĐÃ SỬA: Gom logic fetch API thành một hàm async bên trong useEffect
   useEffect(() => {
     const itemsFromCart = location.state?.checkoutItems;
     const subtotalFromCart = location.state?.subtotal;
@@ -98,13 +97,11 @@ export default function CheckoutPage() {
         shippingMethodId: selectedShipping?.ShippingMethodID
       };
 
-      console.log(payload);
-
       await api.post('/checkout', payload);
 
       // Xóa các sản phẩm đã mua khỏi giỏ hàng
       const purchasedIds = checkoutItems.map(item => item.productId);
-      setCart(prev => prev.filter(item => !purchasedIds.includes(item.productId)));
+      removeFromCart(purchasedIds);
 
       toast.success('Đặt hàng thành công!');
       navigate('/gio-hang');
