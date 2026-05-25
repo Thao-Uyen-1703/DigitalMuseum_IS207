@@ -43,11 +43,13 @@ const checkoutModel = {
 
     generateTrackingNumber: () => {
         const today = new Date();
+        // Lấy ngày, tháng, 2 số cuối của năm
         const dd = String(today.getDate()).padStart(2, '0');
         const mm = String(today.getMonth() + 1).padStart(2, '0');
         const yy = String(today.getFullYear()).slice(-2);
         const dateStr = `${dd}${mm}${yy}`;
 
+        // Tạo 6 ký tự ngẫu nhiên (chữ in hoa + số)
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
         let randomStr = '';
         for (let i = 0; i < 6; i++) {
@@ -63,19 +65,22 @@ const checkoutModel = {
         await connection.beginTransaction();
 
         try {
+            const trackingNum = this.generateTrackingNumber();
+
             // 1. Lưu thông tin vào bảng orders
             const OrderTracking = this.generateTrackingNumber();
             const [orderResult] = await connection.query(
-                `INSERT INTO orders (UserID, AddressID, CouponID, OrderDate, GuestDetails, TotalAmount, Status) 
-                 VALUES (?, ?, NULL, NOW(), ?, ?, 'Pending')`,
+                `INSERT INTO orders (UserID, AddressID, CouponID, OrderDate, GuestDetails, OrderTracking ,TotalAmount, Status) 
+                 VALUES (?, ?, NULL, NOW(), ?, ? , ?, 'Pending')`,
                 [
                     orderData.userId, 
-                    orderData.addressId, 
+                    orderData.addressId,
                     orderData.guestDetails,
-                    OrderTracking,
+                    trackingNum,
                     orderData.totalAmount
                 ]
             );
+
             const orderId = orderResult.insertId;
 
             // 2. Lưu thông tin vào bảng orderdetails
@@ -101,19 +106,19 @@ const checkoutModel = {
 
             // 4. Lưu thông tin bảng payments
             await connection.query(
-                `INSERT INTO payments (OrderID, PaymentMethod, Amount, PaidDate) 
-                 VALUES (?, ?, ?, NOW())`,
+                `INSERT INTO payments (OrderID, PaymentMethod, CreateAt, Amount) 
+                 VALUES (?, ?, NOW(), ?)`,
                 [orderId, orderData.paymentMethod, orderData.totalAmount]
             );
 
             // Xác nhận transaction
             await connection.commit();
-            return OrderTracking;
+            return trackingNum;
 
         } catch (error) {
             // Có lỗi xảy ra thì hoàn tác lại toàn bộ dữ liệu vừa insert
             await connection.rollback();
-            throw error;
+            throw { status: 500, message: "Có lỗi xảy ra khi tạo order" };
         } finally {
             // Trả connection lại cho pool
             connection.release();
