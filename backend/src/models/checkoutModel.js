@@ -35,7 +35,7 @@ const checkoutModel = {
     // Kiểm tra phương thức vận chuyển
     getShippingMethod: async (methodId) => {
         const [rows] = await db.query(
-            `SELECT ShippingMethodID FROM shippingmethods, Price WHERE ShippingMethodID = ? LIMIT 1`,
+            `SELECT ShippingMethodID, Price FROM shippingmethods WHERE ShippingMethodID = ? LIMIT 1`,
             [methodId]
         );
         return rows.length > 0 ? rows[0] : null;
@@ -49,8 +49,8 @@ const checkoutModel = {
         try {
             // 1. Lưu thông tin vào bảng orders
             const [orderResult] = await connection.query(
-                `INSERT INTO orders (UserID, AddressID, CouponID, OrderDate, GuestDetails, TotalAmount, Status, PaymentStatus) 
-                 VALUES (?, ?, NULL, NOW(), ?, ?, 'Pending', 'Pending')`,
+                `INSERT INTO orders (UserID, AddressID, CouponID, OrderDate, GuestDetails, TotalAmount, Status) 
+                 VALUES (?, ?, NULL, NOW(), ?, ?, 'Pending')`,
                 [
                     orderData.userId, 
                     orderData.addressId, 
@@ -83,8 +83,8 @@ const checkoutModel = {
 
             // 4. Lưu thông tin bảng payments
             await connection.query(
-                `INSERT INTO payments (OrderID, PaymentMethod, Amount, PaymentDate, PaymentStatus) 
-                 VALUES (?, ?, ?, NOW(), 'Pending')`,
+                `INSERT INTO payments (OrderID, PaymentMethod, Amount, PaidDate) 
+                 VALUES (?, ?, ?, NOW())`,
                 [orderId, orderData.paymentMethod, orderData.totalAmount]
             );
 
