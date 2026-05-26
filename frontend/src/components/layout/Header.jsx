@@ -4,9 +4,13 @@ import { useState, useRef, useEffect } from 'react';
 import Logo from '../layout/Logo';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
-import ImageDisplay from '../ui/ImageDisplay'; 
+import ImageDisplay from '../ui/ImageDisplay';
+import {toast} from 'sonner';
+import api from '../../api/axiosClient';
+import { useNavigate } from 'react-router-dom';
 
 export default function Header() {
+  const navigate = useNavigate()
   const [isOpen, setIsOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false); // State cho mini-cart
@@ -44,6 +48,19 @@ export default function Header() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      await api.post('/auth/logout');
+
+      await logout();
+
+      navigate('/');
+
+    } catch (err) {
+      toast.error(err.message || "Có lỗi xảy ra khi đăng xuất");
+    }
+  }
 
   return (
     <header className="bg-white border-b border-amber-500 py-3 sticky top-0 z-50 shadow-sm">
@@ -206,7 +223,7 @@ export default function Header() {
                     </div>
                     <Link to="/thong-tin-ca-nhan" className={dropdownItemClass} onClick={() => setIsUserMenuOpen(false)}><UserCircle size={16} /> Thông tin cá nhân</Link>
                     <hr className="my-1 border-gray-100" />
-                    <button className={`${dropdownItemClass} w-full text-red-500 hover:text-red-600 hover:bg-red-50`} onClick={() => { logout(); setIsUserMenuOpen(false); }}><LogOut size={16} /> Đăng xuất</button>
+                    <button className={`${dropdownItemClass} w-full text-red-500 hover:text-red-600 hover:bg-red-50`} onClick={handleLogout}><LogOut size={16} /> Đăng xuất</button>
                   </>
                 )}
               </div>

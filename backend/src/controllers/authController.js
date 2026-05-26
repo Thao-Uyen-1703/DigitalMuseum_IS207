@@ -96,7 +96,7 @@ const authController = {
 
             const { user, accessToken, refreshToken: newRefreshToken } = await authServices.refreshToken(refreshToken);
 
-            res.cookie('refreshToken', '', {
+            res.cookie('refreshToken', newRefreshToken, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'prod',
                 sameSite: 'Lax',

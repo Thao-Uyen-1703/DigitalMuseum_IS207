@@ -76,7 +76,6 @@ const authServices = {
         }
 
         const userInfo = {
-            id: user.UserID,
             username: user.FullName,
             email: user.Email,
             phone: user.Phone,
