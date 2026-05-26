@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import Logo from '../components/layout/Logo';
 import api from '../api/axiosClient';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function LoginPage() {
@@ -151,7 +151,7 @@ export default function LoginPage() {
 
           {/* SIGNUP LINK */}
           <p className="text-center text-gray-600 mt-8">
-            Chưa có tài khoản? <a href="/signup" className="text-[#12372A] font-semibold hover:text-[#436850] transition-colors">Đăng ký tại đây</a>
+            Chưa có tài khoản? <Link to="/dang-ky" className="text-[#12372A] font-semibold hover:text-[#436850] transition-colors">Đăng ký tại đây</Link>
           </p>
         </div>
       </div>
