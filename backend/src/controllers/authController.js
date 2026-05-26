@@ -142,6 +142,29 @@ const authController = {
             const message = err.message || "Lỗi hệ thống máy chủ";
             return res.status(statusCode).json({ success: false, message: message });
         }
+    },
+
+    changePassword: async (req, res) => {
+        try {
+            const userId = req.user.id;
+            const { oldPassword, newPassword, rePassword } = req.body;
+
+            if(!oldPassword || !newPassword || !rePassword) {
+                throw { status: 400, message: "Vui lòng điền đủ các thông tin" }
+            }
+
+            const results = await authServices.changePassword(userId, oldPassword, newPassword, rePassword);
+
+            return res.status(200).json({
+                success: true,
+            });
+            
+        } catch (err) {
+            console.log(err);
+            const statusCode = err.status || 500;
+            const message = err.message || "Lỗi hệ thống máy chủ";
+            return res.status(statusCode).json({ success: false, message: message });
+        }
     }
 }
 

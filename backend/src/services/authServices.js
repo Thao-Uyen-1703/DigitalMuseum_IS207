@@ -1,3 +1,4 @@
+const { changePassword } = require('../controllers/authController');
 const authModel = require('../models/authModel');
 const tokenHelper = require("../utils/tokenHelper");
 const bcrypt = require('bcrypt');
@@ -133,6 +134,27 @@ const authServices = {
 
         await authModel.clearToken(user.UserID);
         return true;
+    },
+
+    changePassword: async(userId, oldPassword, newPassword, rePassword) => {
+        const user = await authModel.findUserById(userId);
+
+
+        const isMatch = await authServices.checkPassword(oldPassword, user.PasswordHash);
+
+        if (!isMatch) {
+            throw { status: 400, message: "Mật khẩu cũ không đúng" };
+        }
+
+        if(newPassword != rePassword) {
+            throw { status: 400, message: "Mật khẩu nhập lại không khớp" }
+        }
+
+        const hashPass = await authServices.hashPassword(newPassword);
+
+        const result = await authModel.changePassword(user.UserID, hashPass);
+
+        return result;
     }
 };
 
