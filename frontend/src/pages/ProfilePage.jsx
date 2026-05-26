@@ -31,6 +31,10 @@ export default function ProfilePage() {
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [passwordData, setPasswordData] = useState({ oldPassword: '', newPassword: '', confirmPassword: '' });
 
+  const [isOrderDetailsModalOpen, setIsOrderDetailsModalOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [orderDetails, setOrderDetails] = useState(null);
+
   const formatPrice = (value) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value || 0);
   const formatDate = (dateStr) => dateStr ? new Date(dateStr).toLocaleDateString('vi-VN') : '---';
 
@@ -59,10 +63,24 @@ export default function ProfilePage() {
   const fetchUserOrders = async () => {
     try {
       setOrdersLoading(true);
-      const response = await api.get('/orders');
+      const response = await api.get('/order');
       setOrders(response.data.data || response.data || []);
     } catch (error) {
       toast.error("Không thể tải danh sách đơn hàng.");
+    } finally {
+      setOrdersLoading(false);
+    }
+  };
+
+  const fetchOrderDetails = async (orderId) => {
+    try {
+      setOrdersLoading(true);
+      const response = await api.get(`/order/${orderId}`);
+      setOrderDetails(response.data.data || response.data);
+      setIsOrderDetailsModalOpen(true);
+      console.log(response.data.data);
+    } catch (error) {
+      toast.error("Không thể tải chi tiết đơn hàng.");
     } finally {
       setOrdersLoading(false);
     }
@@ -345,14 +363,14 @@ export default function ProfilePage() {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {orders.map((order) => (
-                        <div key={order.OrderID} className="border border-slate-100 rounded-xl p-4 md:p-5 hover:border-slate-200 transition-all flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                      {orders.map((order, index) => (
+                        <div key={index} className="border border-slate-100 rounded-xl p-4 md:p-5 hover:border-slate-200 transition-all flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                           <div className="space-y-1">
                             <div className="flex items-center gap-2.5">
                               <span className="font-mono font-bold text-sm text-[#b5995e]">{order.OrderTracking || `#${order.OrderID}`}</span>
                               {getStatusBadge(order.Status)}
                             </div>
-                            <p className="text-xs text-slate-400">Ngày chốt đơn: <span className="font-semibold text-slate-600">{formatDate(order.OrderDate)}</span></p>
+                            <p className="text-xs text-slate-400">Ngày đặt hàng: <span className="font-semibold text-slate-600">{formatDate(order.OrderDate)}</span></p>
                             {order.Note && <p className="text-xs text-slate-400 truncate max-w-md">Ghi chú: {order.Note}</p>}
                           </div>
                           
@@ -362,9 +380,11 @@ export default function ProfilePage() {
                               <span className="text-base font-black text-slate-800">{formatPrice(order.TotalAmount)}</span>
                             </div>
                             <button
-                              onClick={() => navigate(`/tra-cuu/${order.OrderTracking || order.OrderID}`)}
+                              onClick={() => {
+                                setSelectedOrder(order);
+                                fetchOrderDetails(order.OrderTracking);
+                              }}
                               className="p-2.5 bg-slate-50 hover:bg-amber-50 text-slate-500 hover:text-[#b5995e] border border-slate-100 rounded-xl transition-all"
-                              title="Theo dõi hành trình"
                             >
                               <ArrowUpRight size={16} />
                             </button>
@@ -384,8 +404,6 @@ export default function ProfilePage() {
                           <button onClick={() => setIsStatsModalOpen(false)} className="text-slate-400 hover:text-white transition-colors"><X size={18} /></button>
                         </div>
                         <div className="p-6 space-y-5">
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-400 bg-slate-50 px-2.5 py-1 rounded-full uppercase tracking-wider"><ShieldCheck size={12}/> Chỉ tính đơn hàng hợp lệ</span>
-                          
                           <div className="grid grid-cols-2 gap-4">
                               <div className="bg-amber-50/40 border border-amber-100/50 p-4 rounded-xl">
                                 <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide block mb-1">Đơn trong tháng</span>
@@ -434,6 +452,56 @@ export default function ProfilePage() {
                         </form>
                     </div>
                   </div>
+              )}
+
+              {isOrderDetailsModalOpen && orderDetails && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
+                  <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[80vh] overflow-y-auto shadow-2xl animate-scaleUp border border-slate-100">
+                    <div className="p-5 border-b border-slate-100 flex justify-between items-center sticky top-0 bg-white">
+                      <h3 className="font-bold text-base text-slate-800">Chi tiết đơn hàng <span className="font-mono font-bold text-sm text-[#b5995e]">#{orderDetails.OrderTracking}</span></h3>
+                      <button onClick={() => setIsOrderDetailsModalOpen(false)}><X size={20} /></button>
+                    </div>
+                    
+                    <div className="p-6 space-y-6">
+                      {/* Thông tin người nhận */}
+                      <div className="grid grid-cols-2 gap-4 text-sm border-t pt-4 border-gray-300">
+                        <div>
+                          <p className="text-slate-400 font-bold uppercase text-[10px]">Người nhận</p>
+                          <p className="font-medium text-slate-700">{orderDetails.orderInfo.Name}</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-400 font-bold uppercase text-[10px]">Số điện thoại</p>
+                          <p className="font-medium text-slate-700">{orderDetails.orderInfo.Phone}</p>
+                        </div>
+                        <div className="col-span-2">
+                          <p className="text-slate-400 font-bold uppercase text-[10px]">Địa chỉ giao hàng</p>
+                          <p className="font-medium text-slate-700">{orderDetails.orderInfo.Address}</p>
+                        </div>
+                      </div>
+
+                      {/* Danh sách món hàng */}
+                      <div className="border-t pt-4 border-gray-300">
+                        <p className="text-slate-400 font-bold uppercase text-[10px] mb-3">Sản phẩm</p>
+                        <div className="space-y-3">
+                          {orderDetails.items?.map((item, idx) => (
+                            <div key={idx} className="flex justify-between items-center border-b border-slate-50 pb-2">
+                              <div className="flex items-center gap-3">
+                                <ImageDisplay src={item.Image} className="w-10 h-10 object-cover rounded-lg" type="fe" />
+                                <p className="text-sm font-medium text-slate-700">{item.Name} <span className="text-slate-400">x{item.Quantity}</span></p>
+                              </div>
+                              <p className="text-sm font-bold text-slate-800">{formatPrice(item.Price * item.Quantity)}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <div className="border-t pt-4 border-gray-300 flex justify-between items-center">
+                        <span className="font-bold text-slate-800">Tổng cộng:</span>
+                        <span className="text-lg font-black text-[#b5995e]">{formatPrice(orderDetails.TotalAmount)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               )}
               
             </div>
