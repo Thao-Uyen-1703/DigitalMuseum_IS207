@@ -26,6 +26,12 @@ const authModel = {
         const sql = 'INSERT INTO users(FullName, Email, PasswordHash, Phone) VALUES (?, ?, ?, ?)';
         const [results] = await db.query(sql, [name, email, password, phone]);
         return results.affectedRows > 0;
+    },
+
+    changePassword: async(id, password) => {
+        const sql = 'UPDATE users SET PasswordHash = ? WHERE UserID = ?';
+        const [results] = await db.query(sql, [password, id]);
+        return results.affectedRows > 0;
     }
 };
 
