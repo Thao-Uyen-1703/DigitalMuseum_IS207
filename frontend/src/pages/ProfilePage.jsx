@@ -13,7 +13,7 @@ import ImageDisplay from '../components/ui/ImageDisplay';
 
 export default function ProfilePage() {
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, refreshUser } = useAuth();
 
   const [activeTab, setActiveTab] = useState('profile');
   const [loading, setLoading] = useState(false);
@@ -138,6 +138,8 @@ export default function ProfilePage() {
       });
       
       toast.success('Cập nhật thông tin tài khoản thành công!');
+
+      await refreshUser();
       
       const updatedAvatar = response.data.data.avatar;
       if (updatedAvatar) {
