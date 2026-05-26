@@ -10,6 +10,7 @@ import { Toaster } from 'sonner';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import TrackingPage from './pages/TrackingPage';
+import OrderSuccessPage from './pages/OrderSuccessPage';
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
         <Route path="/gio-hang" element={<CartPage />} />
         <Route path="/thanh-toan" element={<CheckoutPage />} />
         <Route path="/tra-cuu" element={<TrackingPage />} />
+        <Route path="/dat-hang-thanh-cong" element={<OrderSuccessPage />} />
       </Routes>
     </>
   )

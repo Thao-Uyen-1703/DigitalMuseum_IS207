@@ -23,6 +23,11 @@ export default function CheckoutPage() {
   const [methods, setMethods] = useState([]);
   const [selectedShipping, setSelectedShipping] = useState(null);
 
+  // --- STATE MỚI CHO API ĐỊA CHỈ ---
+  const [locations, setLocations] = useState([]); // Chứa toàn bộ Tỉnh & Quận
+  const [selectedProvinceCode, setSelectedProvinceCode] = useState('');
+  const [selectedDistrictCode, setSelectedDistrictCode] = useState('');
+
   // 2. STATE FORM NHẬP LIỆU 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -52,11 +57,10 @@ export default function CheckoutPage() {
 
     const fetchShippingMethods = async () => {
       try {
-        const response = await api.get('/shipment-methods'); // Gọi API
-        const data = response.data.data || response.data; // Tùy cấu trúc backend trả về
+        const response = await api.get('/shipment-methods'); 
+        const data = response.data.data || response.data; 
         setMethods(data);
         
-        // Mặc định chọn phương thức đầu tiên
         if (data && data.length > 0) {
           setSelectedShipping(data[0]);
         }
@@ -66,7 +70,20 @@ export default function CheckoutPage() {
       }
     };
 
+    // Gọi API Tỉnh thành phố (depth=2: lấy cả Thành phố và Quận/huyện)
+    const fetchLocations = async () => {
+      try {
+        const response = await fetch('https://provinces.open-api.vn/api/?depth=2');
+        const data = await response.json();
+        setLocations(data);
+      } catch (error) {
+        console.error("Lỗi fetch địa điểm:", error);
+        toast.error("Không thể tải danh sách Tỉnh/Thành phố.");
+      }
+    };
+
     fetchShippingMethods();
+    fetchLocations();
   }, [location, navigate]);
 
   // XỬ LÝ ĐẶT HÀNG
@@ -84,7 +101,6 @@ export default function CheckoutPage() {
         items: orderPayload,
         customerInfo: {
           fullName: formData.fullName,
-          email: formData.email,
           phone: formData.phone,
           shippingAddress: {
             province: formData.province,
@@ -97,14 +113,23 @@ export default function CheckoutPage() {
         shippingMethodId: selectedShipping?.ShippingMethodID
       };
 
-      await api.post('/checkout', payload);
+      const response = await api.post('/checkout', payload);
 
-      // Xóa các sản phẩm đã mua khỏi giỏ hàng
+      const orderData = response.data?.data || response.data;
+
       const purchasedIds = checkoutItems.map(item => item.productId);
       removeFromCart(purchasedIds);
 
       toast.success('Đặt hàng thành công!');
-      navigate('/gio-hang');
+
+      navigate('/dat-hang-thanh-cong', { 
+        state: { 
+          order: orderData, 
+          customerInfo: payload.customerInfo, 
+          finalTotal: finalTotal,
+          paymentMethod: formData.paymentMethod
+        } 
+      });
 
     } catch (error) {
       toast.error(error.response?.data?.message || 'Đặt hàng thất bại. Vui lòng thử lại.');
@@ -115,10 +140,37 @@ export default function CheckoutPage() {
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
+  // XỬ LÝ KHI CHỌN TỈNH/THÀNH PHỐ
+  const handleProvinceChange = (e) => {
+    const code = e.target.value;
+    const name = e.target.options[e.target.selectedIndex].text;
+    setSelectedProvinceCode(code);
+    setSelectedDistrictCode(''); // Reset quận/huyện khi đổi tỉnh
+    setFormData({ 
+      ...formData, 
+      province: code ? name : '', 
+      district: '' // Xóa dữ liệu quận/huyện cũ trong formData
+    });
+  };
+
+  // XỬ LÝ KHI CHỌN QUẬN/HUYỆN
+  const handleDistrictChange = (e) => {
+    const code = e.target.value;
+    const name = e.target.options[e.target.selectedIndex].text;
+    setSelectedDistrictCode(code);
+    setFormData({ 
+      ...formData, 
+      district: code ? name : '' 
+    });
+  };
+
   if (checkoutItems.length === 0) return null; 
 
-  // ĐÃ SỬA: Tính toán lại tổng tiền cuối cùng (Cộng cả tiền hàng và tiền ship)
   const finalTotal = displayTotal + (selectedShipping ? Number(selectedShipping.Price || 0) : 0);
+
+  // Lọc ra danh sách Quận/Huyện dựa trên Tỉnh/Thành phố đang chọn
+  const currentProvince = locations.find(p => p.code.toString() === selectedProvinceCode);
+  const availableDistricts = currentProvince ? currentProvince.districts : [];
 
   return (
     <MainLayout>
@@ -131,26 +183,20 @@ export default function CheckoutPage() {
 
           <form onSubmit={handlePlaceOrder} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             
-            {/* CỘT TRÁI (THÔNG TIN KHÁCH HÀNG & ĐỊA CHỈ) */}
+            {/* CỘT TRÁI */}
             <div className="lg:col-span-7 space-y-6">
               
-              {/* Box 1: Thông tin cá nhân */}
               <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-100 shadow-sm transition-all hover:shadow-md">
                 <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
                   <div className="p-2 bg-amber-50 rounded-lg text-[#b5995e]"><User size={20} /></div>
                   <h2 className="text-xl font-bold text-slate-800 font-['Lora']">Thông tin cá nhân</h2>
                 </div>
 
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Họ và tên người nhận <span className="text-red-500">*</span></label>
-                    <input required type="text" name="fullName" value={formData.fullName} onChange={handleChange} className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#b5995e]/20 focus:border-[#b5995e] transition-all text-sm" placeholder="Ví dụ: Nguyễn Văn A"/>
-                  </div>
-                  
+                <div className="space-y-4">                  
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Địa chỉ Email <span className="text-red-500">*</span></label>
-                      <input required type="email" name="email" value={formData.email} onChange={handleChange} className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#b5995e]/20 focus:border-[#b5995e] transition-all text-sm" placeholder="name@example.com"/>
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Họ và tên người nhận <span className="text-red-500">*</span></label>
+                      <input required type="text" name="fullName" value={formData.fullName} onChange={handleChange} className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#b5995e]/20 focus:border-[#b5995e] transition-all text-sm" placeholder="Ví dụ: Nguyễn Văn A"/>
                     </div>
                     <div>
                       <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Số điện thoại <span className="text-red-500">*</span></label>
@@ -160,7 +206,7 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* Box 2: Địa chỉ giao hàng */}
+              {/* BẢN SỬA: ĐỊA CHỈ GIAO HÀNG */}
               <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-100 shadow-sm transition-all hover:shadow-md">
                 <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
                   <div className="p-2 bg-amber-50 rounded-lg text-[#b5995e]"><MapPin size={20} /></div>
@@ -169,13 +215,41 @@ export default function CheckoutPage() {
 
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Select Tỉnh / Thành phố */}
                     <div>
                       <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Tỉnh / Thành phố <span className="text-red-500">*</span></label>
-                      <input required type="text" name="province" value={formData.province} onChange={handleChange} className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#b5995e]/20 focus:border-[#b5995e] transition-all text-sm" placeholder="VD: Hà Nội, TP. Hồ Chí Minh"/>
+                      <select 
+                        required 
+                        value={selectedProvinceCode} 
+                        onChange={handleProvinceChange} 
+                        className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#b5995e]/20 focus:border-[#b5995e] transition-all text-sm cursor-pointer"
+                      >
+                        <option value="">-- Chọn Tỉnh / Thành phố --</option>
+                        {locations.map(province => (
+                          <option key={province.code} value={province.code}>
+                            {province.name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
+
+                    {/* Select Quận / Huyện */}
                     <div>
                       <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Quận / Huyện <span className="text-red-500">*</span></label>
-                      <input required type="text" name="district" value={formData.district} onChange={handleChange} className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#b5995e]/20 focus:border-[#b5995e] transition-all text-sm" placeholder="VD: Quận 1, Cầu Giấy"/>
+                      <select 
+                        required 
+                        value={selectedDistrictCode} 
+                        onChange={handleDistrictChange} 
+                        disabled={!selectedProvinceCode}
+                        className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#b5995e]/20 focus:border-[#b5995e] transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-slate-100 cursor-pointer"
+                      >
+                        <option value="">-- Chọn Quận / Huyện --</option>
+                        {availableDistricts.map(district => (
+                          <option key={district.code} value={district.code}>
+                            {district.name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
 
@@ -193,7 +267,6 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* Box 3: Phương thức thanh toán */}
               <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-100 shadow-sm transition-all hover:shadow-md">
                 <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
                   <div className="p-2 bg-amber-50 rounded-lg text-[#b5995e]"><CreditCard size={20} /></div>
@@ -221,7 +294,7 @@ export default function CheckoutPage() {
 
             </div>
 
-            {/* CỘT PHẢI (BILL & VẬN CHUYỂN) */}
+            {/* CỘT PHẢI */}
             <div className="lg:col-span-5 bg-white p-6 md:p-8 rounded-2xl border border-slate-100 shadow-sm sticky top-24 space-y-6">
               <h2 className="text-xl font-bold text-slate-800 border-b border-slate-100 pb-4 m-0 font-['Lora']">Hóa đơn hàng</h2>
               
@@ -242,7 +315,6 @@ export default function CheckoutPage() {
                 ))}
               </div>
 
-              {/* ĐÃ SỬA: Danh sách các Phương thức Vận chuyển ở đây */}
               <div className="space-y-3 pt-2 border-t border-dashed border-slate-200">
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500">
                   Hình thức vận chuyển *
@@ -286,7 +358,6 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* ĐÃ SỬA: Tổng tiền cộng cả giá vận chuyển */}
               <div className="border-t border-slate-100 pt-4 flex justify-between items-baseline">
                 <span className="text-sm font-bold text-slate-800">Tổng tiền thanh toán:</span>
                 <span className="text-[#b5995e] text-2xl font-black font-sans tracking-tight">
