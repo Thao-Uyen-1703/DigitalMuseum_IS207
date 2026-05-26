@@ -1,11 +1,24 @@
-import React, { useState } from 'react';
-import noImage from '../../assets/no-image.png'
+import React, { useState, useEffect } from 'react';
+import noImage from '../../assets/no-image.png';
 
-const ImageDisplay = ({ src, alt, ...props }) => {
-  const [imgSrc, setImgSrc] = useState(() => {
-    if (!src) return noImage;
-    return '/images/' + src;
-  });
+const ImageDisplay = ({ src, alt, type = 'be', ...props }) => {
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_APP_URL;
+
+  const resolveImageSource = (source, sourceType) => {
+    if (!source) return noImage;
+
+    if (sourceType === 'fe') {
+      return '/images/' + source;
+    }
+
+    return `${BACKEND_URL}/images/${source}`;
+  };
+
+  const [imgSrc, setImgSrc] = useState(() => resolveImageSource(src, type));
+
+  useEffect(() => {
+    setImgSrc(resolveImageSource(src, type));
+  }, [src, type]);
 
   const handleError = () => {
     setImgSrc(noImage);
@@ -15,7 +28,7 @@ const ImageDisplay = ({ src, alt, ...props }) => {
     <img 
       {...props} 
       src={imgSrc} 
-      alt={alt || "Image"} 
+      alt={alt || "Hình ảnh hệ thống"} 
       onError={handleError} 
     />
   );

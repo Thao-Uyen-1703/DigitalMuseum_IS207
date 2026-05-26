@@ -88,7 +88,7 @@ export default function Header() {
               <ShoppingCart size={22} className="text-amber-600" />
               
               {cartItemsCount > 0 && (
-                <span className="absolute -top-1 -right-1 z-10 flex items-center justify-center bg-white text-amber-700 text-[11px] font-bold leading-none px-1 min-w-[18px] h-[18px] border border-amber-500 rounded-full shadow-sm pointer-events-none">
+                <span className="absolute -top-1 -right-1 z-10 flex items-center justify-center bg-white text-amber-700 text-xs font-bold leading-none px-1 min-w-4.5 h-4.5 border border-amber-500 rounded-full shadow-sm pointer-events-none">
                   {cartItemsCount > 99 ? '99+' : cartItemsCount}
                 </span>
               )}
@@ -96,12 +96,12 @@ export default function Header() {
 
             {/* Khung Dropdown Giỏ hàng */}
             {isCartOpen && (
-              <div className="absolute right-0 mt-2 w-[340px] bg-white border border-gray-100 rounded-xl shadow-xl z-50 animate-in fade-in zoom-in duration-200 overflow-hidden">
+              <div className="absolute right-0 mt-2 w-85 bg-white border border-gray-100 rounded-xl shadow-xl z-50 animate-in fade-in zoom-in duration-200 overflow-hidden">
                 <div className="px-4 py-3 border-b border-gray-100 bg-slate-50">
                   <h4 className="text-sm font-bold text-gray-700 m-0">Giỏ hàng của bạn</h4>
                 </div>
 
-                <div className="max-h-[300px] overflow-y-auto">
+                <div className="max-h-75 overflow-y-auto">
                   {cart.length === 0 ? (
                     <div className="p-6 text-center text-gray-500 text-sm">
                       <ShoppingCart size={32} className="mx-auto mb-2 text-gray-300" />
@@ -200,8 +200,7 @@ export default function Header() {
                       <p className="text-xs text-gray-400">Tài khoản</p>
                       <p className="text-sm font-bold text-gray-700 truncate">{user.name || user.email}</p>
                     </div>
-                    <Link to="/profile" className={dropdownItemClass} onClick={() => setIsUserMenuOpen(false)}><UserCircle size={16} /> Thông tin cá nhân</Link>
-                    <Link to="/orders" className={dropdownItemClass} onClick={() => setIsUserMenuOpen(false)}><Package size={16} /> Đơn hàng</Link>
+                    <Link to="/thong-tin-ca-nhan" className={dropdownItemClass} onClick={() => setIsUserMenuOpen(false)}><UserCircle size={16} /> Thông tin cá nhân</Link>
                     <hr className="my-1 border-gray-100" />
                     <button className={`${dropdownItemClass} w-full text-red-500 hover:text-red-600 hover:bg-red-50`} onClick={() => { logout(); setIsUserMenuOpen(false); }}><LogOut size={16} /> Đăng xuất</button>
                   </>
