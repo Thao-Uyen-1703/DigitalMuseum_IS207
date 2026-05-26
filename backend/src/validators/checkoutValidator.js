@@ -14,9 +14,6 @@ const checkoutSchema = joi.object({
         fullName: joi.string().trim().min(3).max(100).required().messages({
             'string.empty': 'Họ tên không được để trống'
         }),
-        email: joi.string().trim().email().required().messages({
-            'string.email': 'Email không hợp lệ'
-        }),
         phone: joi.string().trim().pattern(/^0[0-9]{9}$/).required().messages({
             'string.pattern.base': 'Số điện thoại phải có 10 chữ số và bắt đầu bằng số 0'
         }),
