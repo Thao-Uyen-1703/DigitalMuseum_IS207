@@ -2,18 +2,27 @@ const db = require('../config/mysql');
 
 const productModel = {
     getFiltered: async (params) => {
-        let sql = `SELECT * FROM Products WHERE 1=1`;
+        let sql = `SELECT DISTINCT p.* FROM Products p`;
         let queryParams = [];
+
+        if (params.location) {
+            sql += `
+                JOIN ProductLocations pl ON p.ProductID = pl.ProductID
+                JOIN Locations l ON pl.LocationID = l.LocationID
+            `;
+        }
+
+        sql += ` WHERE 1=1`;
 
         // Tìm kiếm theo tên hoặc mô tả
         if (params.search) {
-            sql += ` AND (ProductName LIKE ? OR Description LIKE ?)`;
-            queryParams.push(`%${params.search}%`, `%${params.search}%`);
+            sql += ` AND (ProductName LIKE ?)`;
+            queryParams.push(`%${params.search}%`);
         }
 
         // Lọc theo địa điểm
         if (params.location) {
-            sql += ` AND Origin = ?`;
+            sql += ` AND l.LocationName = ?`;
             queryParams.push(params.location);
         }
 
@@ -48,15 +57,24 @@ const productModel = {
     },
 
     countFiltered: async (params) => {
-        let sql = `SELECT COUNT(*) as total FROM Products WHERE 1=1`;
+        let sql = `SELECT COUNT(DISTINCT p.ProductID) as total FROM Products p`;
         let queryParams = [];
 
+        if (params.location) {
+            sql += `
+                JOIN ProductLocations pl ON p.ProductID = pl.ProductID
+                JOIN Locations l ON pl.LocationID = l.LocationID
+            `;
+        }
+
+        sql += ` WHERE 1=1`;
+
         if (params.search) {
-            sql += ` AND (ProductName LIKE ? OR Description LIKE ?)`;
-            queryParams.push(`%${params.search}%`, `%${params.search}%`);
+            sql += ` AND (ProductName LIKE ?)`;
+            queryParams.push(`%${params.search}%`);
         }
         if (params.location) {
-            sql += ` AND Origin = ?`;
+            sql += ` AND l.LocationName = ?`;
             queryParams.push(params.location);
         }
         if (params.priceFrom !== null) {
