@@ -60,7 +60,7 @@ export default function Header() {
             <li><Link to="/" className={linkClass}>Trang chủ<span className="absolute bottom-0 left-0 w-full h-0.5 bg-amber-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span></Link></li>
             <li><Link to="#" className={linkClass}>Bảo tàng số<span className="absolute bottom-0 left-0 w-full h-0.5 bg-amber-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span></Link></li>
             <li><Link to="/cua-hang" className={linkClass}>Cửa hàng<span className="absolute bottom-0 left-0 w-full h-0.5 bg-amber-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span></Link></li>
-            <li><Link to="#" className={linkClass}>Tìm hiểu<span className="absolute bottom-0 left-0 w-full h-0.5 bg-amber-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span></Link></li>
+            <li><Link to="/tra-cuu" className={linkClass}>Tra cứu<span className="absolute bottom-0 left-0 w-full h-0.5 bg-amber-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span></Link></li>
           </ul>
         </nav>
 
@@ -174,7 +174,11 @@ export default function Header() {
               {user ? (
                 <div className="flex items-center gap-1">
                   {user.avatar ? (
-                    <img src={user.avatar} alt="Avatar" className="w-8 h-8 rounded-full object-cover border border-amber-200" />
+                    <ImageDisplay 
+                      src={user.avatar} 
+                      alt="Avatar"
+                      type="be"
+                      className="w-8 h-8 rounded-full object-cover border border-amber-200" />
                   ) : (
                     <div className="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center text-white">
                       <User size={18} />
