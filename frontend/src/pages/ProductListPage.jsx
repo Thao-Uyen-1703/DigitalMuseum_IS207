@@ -143,16 +143,22 @@ const updateUrlParams = (newFilters, page, search) => {
 
         <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="mb-8">
-            <div className="relative">
-              <Search className="absolute left-4 top-3.5 w-5 h-5 text-gray-400" />
+            <form onSubmit={handleSearchSubmit} className="relative group">
+              <button 
+                type="submit" 
+                className="absolute left-4 top-3.5 text-gray-400 hover:text-amber-600 transition-colors"
+                title="Tìm kiếm"
+              >
+                <Search className="w-5 h-5" />
+              </button>
               <input
                 type="text"
-                placeholder="Tìm kiếm sản phẩm..."
+                placeholder="Tìm kiếm sản phẩm... (Nhấn Enter để tìm)"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all shadow-sm group-hover:border-amber-400"
               />
-            </div>
+            </form>
           </div>
 
           <div className="flex gap-8">
