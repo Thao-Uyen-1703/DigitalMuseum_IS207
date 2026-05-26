@@ -65,10 +65,9 @@ const checkoutModel = {
         await connection.beginTransaction();
 
         try {
-            const trackingNum = this.generateTrackingNumber();
+            const trackingNum = checkoutModel.generateTrackingNumber();
 
             // 1. Lưu thông tin vào bảng orders
-            const OrderTracking = this.generateTrackingNumber();
             const [orderResult] = await connection.query(
                 `INSERT INTO orders (UserID, AddressID, CouponID, OrderDate, GuestDetails, OrderTracking ,TotalAmount, Status) 
                  VALUES (?, ?, NULL, NOW(), ?, ? , ?, 'Pending')`,
@@ -118,7 +117,7 @@ const checkoutModel = {
         } catch (error) {
             // Có lỗi xảy ra thì hoàn tác lại toàn bộ dữ liệu vừa insert
             await connection.rollback();
-            throw { status: 500, message: "Có lỗi xảy ra khi tạo order" };
+            throw { status: 500, message: error };
         } finally {
             // Trả connection lại cho pool
             connection.release();
