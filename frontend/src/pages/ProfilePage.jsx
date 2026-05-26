@@ -131,7 +131,11 @@ export default function ProfilePage() {
         submitData.append('image', avatarFile); 
       }
 
-      const response = await api.put('/profile', submitData);
+      const response = await api.put('/profile', submitData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
       
       toast.success('Cập nhật thông tin tài khoản thành công!');
       

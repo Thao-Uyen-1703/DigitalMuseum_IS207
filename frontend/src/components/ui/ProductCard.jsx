@@ -2,6 +2,7 @@ import { ShoppingCart, MapPin } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import noImage from '../../assets/no-image.png';
+import ImageDisplay from './ImageDisplay';
 
 export default function ProductCard({ product }) {
   const [isHovered, setIsHovered] = useState(false);
@@ -14,22 +15,6 @@ export default function ProductCard({ product }) {
     }).format(parseFloat(price));
   };
 
-  // Image URL from public/images folder
-  const getImageUrl = () => {
-    if (imageError || !product.ImageURL) {
-      return noImage;
-    }
-    return `/images/${product.ImageURL}`;
-  };
-
-  const handleImageError = (e) => {
-    // Only set error once to prevent infinite loops
-    if (!imageError) {
-      setImageError(true);
-      e.target.src = noImage;
-    }
-  };
-
   return (
     <div
       className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-2"
@@ -38,11 +23,11 @@ export default function ProductCard({ product }) {
     >
       {/* Image Container */}
       <div className="relative h-40 overflow-hidden bg-gray-200">
-        <img
-          src={getImageUrl()}
+        <ImageDisplay
+          src={product.ImageURL}
           alt={product.ProductName}
+          type="be"
           className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
-          onError={handleImageError}
         />
       </div>
 
