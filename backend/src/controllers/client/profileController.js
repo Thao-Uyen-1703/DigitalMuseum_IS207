@@ -1,5 +1,5 @@
-const profileServices = require('../services/profileServices');
-const profileValidator = require('../validators/profileValidator');
+const profileServices = require('../../services/client/profileServices');
+const profileValidator = require('../../validators/profileValidator');
 
 const profileController = {
     getProfile: async (req, res) => {

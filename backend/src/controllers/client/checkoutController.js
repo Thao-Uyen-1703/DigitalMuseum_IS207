@@ -1,5 +1,5 @@
-const checkoutServices = require('../services/checkoutServices');
-const checkoutValidator = require('../validators/checkoutValidator');
+const checkoutServices = require('../../services/client/checkoutServices');
+const checkoutValidator = require('../../validators/checkoutValidator');
 
 const checkoutController = {
     createOrder: async(req, res) => {

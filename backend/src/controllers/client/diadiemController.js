@@ -1,4 +1,4 @@
-const diadiemModel = require('../models/diadiemModel');
+const diadiemModel = require('../../models/diadiemModel');
 
 const diadiemController = {
     getAllLocations: async (req, res) => {

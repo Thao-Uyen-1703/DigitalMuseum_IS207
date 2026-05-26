@@ -1,4 +1,4 @@
-const checkoutModel = require('../models/checkoutModel');
+const checkoutModel = require('../../models/checkoutModel');
 
 const checkoutServices = {
     createOrder: async (value, userId) => {

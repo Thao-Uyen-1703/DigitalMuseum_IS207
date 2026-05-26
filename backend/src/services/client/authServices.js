@@ -1,6 +1,6 @@
-const { changePassword } = require('../controllers/authController');
-const authModel = require('../models/authModel');
-const tokenHelper = require("../utils/tokenHelper");
+const { changePassword } = require('../../controllers/client/authController');
+const authModel = require('../../models/authModel');
+const tokenHelper = require("../../utils/tokenHelper");
 const bcrypt = require('bcrypt');
 
 const authServices = {

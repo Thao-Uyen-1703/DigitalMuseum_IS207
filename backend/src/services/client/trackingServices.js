@@ -1,4 +1,4 @@
-const trackingModel = require('../models/trackingModel');
+const trackingModel = require('../../models/trackingModel');
 
 const trackingServices = {
     getGuestInfo: async(code) => {

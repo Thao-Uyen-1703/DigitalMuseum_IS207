@@ -1,7 +1,7 @@
 
 const express = require('express');
 const router = express.Router();
-const shipmentController = require('../controllers/shipmentController');
+const shipmentController = require('../../controllers/client/shipmentController');
 
 router.get('/', shipmentController.getMethods);
 

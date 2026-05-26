@@ -1,4 +1,4 @@
-const profileModel = require('../models/profileModel');
+const profileModel = require('../../models/profileModel');
 
 const profileServices = {
     getProfile: async(id) => {

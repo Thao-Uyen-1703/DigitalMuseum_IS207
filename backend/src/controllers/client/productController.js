@@ -1,4 +1,4 @@
-const productServices = require('../services/productServices')
+const productServices = require('../../services/client/productServices')
 
 const productController = {
     getAllProductByFilters: async (req, res) => {
