@@ -1,4 +1,4 @@
-const shipmentServices = require('../services/shipmentServices');
+const shipmentServices = require('../../services/client/shipmentServices');
 
 const shipmentController = {
     getMethods: async (req, res) => {

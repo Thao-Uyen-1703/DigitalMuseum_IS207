@@ -17,13 +17,15 @@ const trackingRoute = require('./routes/client/trackingRoute');
 const orderRoute = require('./routes/client/orderRoute');
 const profileRoute = require('./routes/client/profileRoute');
 
+const statisticsRoute = require('./routes/admin/statisticsRoute');
+
 const app = express();
 const port = 3000;
 
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
-    origin: process.env.FRONT_END_URL,
+    origin: [process.env.FRONT_END_URL, process.env.ADMIN_URL],
     credentials: true
 }));
 
@@ -39,7 +41,7 @@ app.use('/api/tracking', trackingRoute);
 app.use('/api/order', orderRoute);
 app.use('/api/profile', profileRoute);
 
-
+app.use('/api/admin/statistics', statisticsRoute);
 
 app.listen(port, () => {
     console.log(`Running at port:${port}`);

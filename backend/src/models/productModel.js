@@ -123,6 +123,16 @@ const productModel = {
     getLocationInfo: async (id) => {
         const [rows] = await db.query('SELECT LocationName, Details, ThumbnailURL FROM Locations WHERE LocationID = ?', [id]);
         return rows[0];
+    },
+
+    getProductsCount: async() => {
+        const [rows] = await db.query('SELECT Count(*) as total FROM products');
+        return rows[0].total || 0;
+    },
+
+    getProductsCountByStatus: async(status) => {
+        const [rows] = await db.query('SELECT Count(*) as total FROM products WHERE IsActive = ?', [status]);
+        return rows[0].total || 0;
     }
 };
 
