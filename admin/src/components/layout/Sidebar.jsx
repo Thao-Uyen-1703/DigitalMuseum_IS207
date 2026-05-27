@@ -3,6 +3,10 @@ import {
   LayoutDashboard, MapPin, Package, ShoppingCart, 
   FileText, Settings, Menu, X, User, LogOut 
 } from 'lucide-react';
+import { toast } from 'sonner';
+import api from '../../api/axiosClient';
+import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const menuItems = [
   { title: 'Thống kê', icon: LayoutDashboard },
@@ -13,7 +17,22 @@ const menuItems = [
 ];
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  const handleLogout = async () => {
+    try {
+      await api.post('/auth/logout');
+
+      await logout();
+
+      navigate('/');
+
+    } catch (err) {
+      toast.error(err.message || "Có lỗi xảy ra khi đăng xuất");
+    }
+  }
 
   return (
     <aside 
@@ -84,7 +103,9 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
               <button className="w-full text-left px-4 py-2.5 text-sm text-gray-200 hover:bg-white/10 hover:text-white flex items-center gap-3 transition-colors">
                 <User size={16} /> Thông tin cá nhân
               </button>
-              <button className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-white/5 flex items-center gap-3 transition-colors">
+              <button
+                onClick={handleLogout}
+                className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-white/5 flex items-center gap-3 transition-colors">
                 <LogOut size={16} /> Đăng xuất
               </button>
             </div>
