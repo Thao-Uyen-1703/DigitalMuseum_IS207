@@ -9,7 +9,7 @@ const saltRounds = 10;
 
 const productRoute = require('./routes/client/productRoute');
 const diadiemRoute = require('./routes/client/diadiemRoute');
-const authRoute = require('./routes/client/authRoute');
+const authRoute = require('./routes/authRoute');
 const cartRoute = require('./routes/client/cartRoute');
 const shipmentRoute = require('./routes/client/shipmentRoute');
 const checkoutRoute = require('./routes/client/checkoutRoute');

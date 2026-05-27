@@ -32,6 +32,11 @@ const authModel = {
         const sql = 'UPDATE users SET PasswordHash = ? WHERE UserID = ?';
         const [results] = await db.query(sql, [password, id]);
         return results.affectedRows > 0;
+    },
+
+    findStaffByEmail: async(email) => {
+        const [rows] = await db.query('SELECT * FROM users WHERE Email = ? AND Role != ?', [email, 'Customer']);
+        return rows[0];
     }
 };
 

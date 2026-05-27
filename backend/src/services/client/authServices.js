@@ -33,6 +33,35 @@ const authServices = {
         return { user, accessToken, refreshToken };
     },
 
+    authenticateStaff: async(email, password) => {
+        const user = await authModel.findStaffByEmail(email);
+
+        if (!user) {
+            throw { status: 400, message: "Email hoặc mật khẩu không đúng" };
+        }
+
+        const isMatch = await authServices.checkPassword(password, user.PasswordHash);
+
+        if (!isMatch) {
+            throw { status: 400, message: "Email hoặc mật khẩu không đúng" };
+        }
+
+        if(!user.IsActive) {
+            throw { status: 400, message: "Tài khoản đã bị khóa" };
+        }
+
+        const accessToken = tokenHelper.generateAccessToken(user);
+        const refreshToken = tokenHelper.generateRefreshToken(user);
+        
+        const results = await authModel.saveRefreshToken(user.UserID, refreshToken);
+
+        if(!results) {
+            throw { status: 500, message: "Có lỗi xảy ra khi đăng nhập" };
+        }
+
+        return { user, accessToken, refreshToken };
+    },
+
     checkPassword: async (password, hash) => {
         if (!password || !hash) {
             return false;
@@ -79,7 +108,8 @@ const authServices = {
             username: user.FullName,
             email: user.Email,
             phone: user.Phone,
-            avatar: user.AvatarURL
+            avatar: user.AvatarURL,
+            role: user.Role
         };
 
         return userInfo;
