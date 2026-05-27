@@ -22,12 +22,35 @@ const authController = {
             res.status(200).json({
                 success: true,
                 accessToken: accessToken,
-                user: {
-                    id: user.UserID,
-                    name: user.FullName,
-                    avatar: user.AvatarURL,
-                    role: user.Role
-                }
+            });
+
+        } catch (err) {
+            const statusCode = err.status || 500;
+            const message = err.message || "Lỗi hệ thống máy chủ";
+            return res.status(statusCode).json({ success: false, message: message });
+        }
+    },
+
+    loginStaff: async(req, res) => {
+        try {
+            const { email, password } = req.body;
+
+            if (!email || !password) {
+                return res.status(400).json({ success: false, message: "Vui lòng nhập đầy đủ email và mật khẩu" });
+            }
+
+            const { user, accessToken, refreshToken } = await authServices.authenticateStaff(email, password);
+
+            res.cookie('refreshToken', refreshToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'prod',
+                sameSite: 'Lax',
+                maxAge: 7 * 24 * 60 * 60 * 1000
+            });
+
+            res.status(200).json({
+                success: true,
+                accessToken: accessToken
             });
 
         } catch (err) {
@@ -106,12 +129,6 @@ const authController = {
             res.status(200).json({
                 success: true,
                 accessToken: accessToken,
-                user: {
-                    id: user.UserID,
-                    name: user.FullName,
-                    avatar: user.AvatarURL,
-                    role: user.Role
-                }
             });
         } catch (err) {
             const statusCode = err.status || 500;
