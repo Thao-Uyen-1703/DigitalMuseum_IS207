@@ -1,4 +1,4 @@
-const shipmentModel = require('../models/shipmentModel');
+const shipmentModel = require('../../models/shipmentModel');
 
 const shipmentServices = {
     getMethods: async() => {
