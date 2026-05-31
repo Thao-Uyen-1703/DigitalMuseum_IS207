@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   LayoutDashboard, MapPin, Package, ShoppingCart, 
-  FileText, Settings, Menu, X, User, LogOut 
+  FileText, Settings, Menu, X, User, LogOut, Tags
 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../../api/axiosClient';
@@ -12,6 +12,7 @@ const menuItems = [
   { title: 'Thống kê', icon: LayoutDashboard, navigate: '/' },
   { title: 'Địa điểm', icon: MapPin, navigate: '/dia-diem'},
   { title: 'Sản phẩm', icon: Package, navigate: '/san-pham'},
+  { title: 'Danh mục', icon: Tags, navigate: '/danh-muc' },
   { title: 'Đơn hàng', icon: ShoppingCart, navigate: '/don-hang' },
   { title: 'Quản lý blog', icon: FileText, navigate: '/blog' },
 ];
