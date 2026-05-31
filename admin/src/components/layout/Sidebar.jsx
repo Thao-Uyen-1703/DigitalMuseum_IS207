@@ -9,11 +9,11 @@ import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 const menuItems = [
-  { title: 'Thống kê', icon: LayoutDashboard },
-  { title: 'Địa điểm', icon: MapPin },
-  { title: 'Sản phẩm', icon: Package },
-  { title: 'Đơn hàng', icon: ShoppingCart },
-  { title: 'Quản lý blog', icon: FileText },
+  { title: 'Thống kê', icon: LayoutDashboard, navigate: '/' },
+  { title: 'Địa điểm', icon: MapPin, navigate: '/dia-diem'},
+  { title: 'Sản phẩm', icon: Package, navigate: '/san-pham'},
+  { title: 'Đơn hàng', icon: ShoppingCart, navigate: '/don-hang' },
+  { title: 'Quản lý blog', icon: FileText, navigate: '/blog' },
 ];
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
@@ -57,7 +57,8 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       <nav className="flex-1 p-3 space-y-2 overflow-y-auto custom-scrollbar">
         {menuItems.map((item, index) => (
           <div 
-            key={index} 
+            key={index}
+            onClick={() => {navigate(item.navigate)}}
             className={`flex items-center p-3 rounded-lg hover:bg-white/10 hover:text-white cursor-pointer transition-colors group
               ${isOpen ? 'justify-start' : 'justify-center'}
             `}
