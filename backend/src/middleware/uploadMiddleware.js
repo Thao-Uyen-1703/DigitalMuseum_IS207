@@ -15,7 +15,7 @@ const storage = multer.diskStorage({
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, 'avatar-' + uniqueSuffix + path.extname(file.originalname).toLowerCase());
+        cb(null, 'image-' + uniqueSuffix + path.extname(file.originalname).toLowerCase());
     }
 });
 
@@ -27,7 +27,7 @@ const fileFilter = (req, file, cb) => {
     if (extname && mimetype) {
         return cb(null, true);
     } else {
-        cb(new Error('Chỉ cho phép định dạng ảnh: jpeg, jpg, png, webp'), false);
+        cb(new Error('Chỉ cho phép định dạng ảnh: jpeg, jpg, png'), false);
     }
 };
 

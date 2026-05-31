@@ -4,6 +4,7 @@ import DashboardPage from './pages/Dashboard/index';
 import { Toaster } from 'sonner';
 import Login from './pages/Login/index';
 import ProtectedRoute from './components/ProtectedRoute';
+import ProductList from './pages/Products';
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
         <Route path="/dang-nhap" element={<Login />} />
         <Route element={<ProtectedRoute allowedRoles={['Admin', 'Manager']} />}>
           <Route path="/" element={<DashboardPage />} />
+          <Route path="/san-pham" element={<ProductList />} />
         </Route>
       </Routes>
     </>

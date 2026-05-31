@@ -3,7 +3,8 @@ const jwt = require('jsonwebtoken');
 const tokenHelper = {
     generateAccessToken: (user) => {
         return jwt.sign({
-            id: user.UserID
+            id: user.UserID,
+            role: user.Role
         },
         process.env.JWT_ACCESS_SECRET,
         {
