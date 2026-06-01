@@ -6,6 +6,7 @@ import Login from './pages/Login/index';
 import ProtectedRoute from './components/ProtectedRoute';
 import ProductList from './pages/Products';
 import CategoryList from './pages/Categories';
+import LocationList from './pages/Locations';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
           <Route path="/" element={<DashboardPage />} />
           <Route path="/san-pham" element={<ProductList />} />
           <Route path="/danh-muc" element={<CategoryList />} />
+          <Route path="/dia-diem" element={<LocationList />} />
         </Route>
       </Routes>
     </>

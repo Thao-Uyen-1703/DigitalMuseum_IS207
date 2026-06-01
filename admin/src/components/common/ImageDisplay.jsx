@@ -7,6 +7,15 @@ const ImageDisplay = ({ src, alt, type = 'be', ...props }) => {
   const resolveImageSource = (source, sourceType) => {
     if (!source) return noImage;
 
+    if (typeof source === 'string' && (
+        source.startsWith('data:') ||
+        source.startsWith('blob:') ||
+        source.startsWith('http')
+      )
+    ) {
+      return source;
+    }
+
     if (sourceType === 'fe') {
       return '/images/' + source;
     }
