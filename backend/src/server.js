@@ -20,6 +20,7 @@ const profileRoute = require('./routes/client/profileRoute');
 const statisticsRoute = require('./routes/admin/statisticsRoute');
 const adminProductRoute = require('./routes/admin/productRoute');
 const categoryRoute = require('./routes/admin/categoryRoute');
+const locationRoute = require('./routes/admin/locationRoute');
 
 const app = express();
 const port = 3000;
@@ -46,6 +47,7 @@ app.use('/api/profile', profileRoute);
 app.use('/api/admin/statistics', statisticsRoute);
 app.use('/api/admin/products', adminProductRoute);
 app.use('/api/admin/categories', categoryRoute);
+app.use('/api/admin/locations', locationRoute);
 
 app.listen(port, () => {
     console.log(`Running at port:${port}`);
