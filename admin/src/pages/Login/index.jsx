@@ -1,515 +1,175 @@
-import { useState, useEffect } from 'react';
-import { Plus, Search } from 'lucide-react';
-import { toast } from 'sonner';
-import MainLayout from '../../components/MainLayout';
-import DataTable from '../../components/table/DataTable';
-import Modal from '../../components/common/Modal';
-import Pagination from '../../components/common/Pagination';
-import useTableSort from '../../components/hooks/useTableSort';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axiosClient';
-import LocationTableRow from '../../components/table/LocationTableRow';
-import ImageDisplay from '../../components/common/ImageDisplay';
+import { toast } from 'sonner';
 
-export default function LocationList() {
-  const [locations, setLocations] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [totalPages, setTotalPages] = useState(1);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemPerPage, setItemPerPage] = useState(10);
-  const [searchInput, setSearchInput] = useState('');
-  const [showModal, setShowModal] = useState(false);
-  const [modalMode, setModalMode] = useState('create');
-  const [provinces, setProvinces] = useState([]);
-  const [selectedLocation, setSelectedLocation] = useState(null);
-  const [formErrors, setFormErrors] = useState({});
-  const [showCitySuggestions, setShowCitySuggestions] = useState(false);
-  const [deleteError, setDeleteError] = useState('');
-  const [formData, setFormData] = useState({
-    LocationName: '',
-    City: '',
-    Description: ''
-  });
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
+export default function Login() {
+    const navigate = useNavigate();
+    const { user, login } = useAuth();
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
 
-  const { sortConfig, requestSort, clearAllSorts } = useTableSort();
+    useEffect(() => {
+        if(user) {
+            navigate('/');
+        }
+    }, [])
 
-  const fetchLocations = async (page = currentPage) => {
-    try {
-      setLoading(true);
-      const params = { page, perPage: itemPerPage };
-      if (searchInput) params.search = searchInput;
-      if (sortConfig) params.sortConfigs = JSON.stringify([sortConfig]);
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+        
+        if (!email || !password) {
+            setError('Vui lòng điền đầy đủ thông tin đăng nhập.');
+            return;
+        }
 
-      const response = await api.get('/admin/locations', { params });
-      if (response.data.success) {
-        const data = response.data.data || {};
-        setLocations(data.locations || []);
-        setTotalPages(data.totalPages || 1);
-        setCurrentPage(page);
-      }
-    } catch (err) {
-      console.error('Error fetching locations:', err);
-      toast.error('Có lỗi xảy ra, vui lòng thử lại');
-    } finally {
-      setLoading(false);
-    }
-  };
+        setIsLoading(true);
 
-    const fetchProvinces = async () => {
         try {
-            const response = await fetch('https://provinces.open-api.vn/api/v2/?depth=2');
-            const data = await response.json();
-            setProvinces(data);
-        } catch (error) {
-            console.error("Lỗi fetch địa điểm:", error);
+            const response = await api.post('/auth/staff/login', {
+                email: email,
+                password: password
+            });
+
+            const { accessToken } = response.data;
+
+            await login(accessToken);
+
+            navigate('/');
+        } catch (err) {
+            setError('Tài khoản hoặc mật khẩu không chính xác.');
+        } finally {
+            setIsLoading(false);
         }
     };
 
-  useEffect(() => {
-    fetchLocations(1);
-    fetchProvinces();
-  }, []);
-
-  useEffect(() => {
-    setCurrentPage(1);
-    fetchLocations(1);
-  }, [itemPerPage, sortConfig]);
-
-  const handleRefresh = () => {
-    setSearchInput('');
-    setCurrentPage(1);
-    clearAllSorts();
-    fetchLocations(1);
-  };
-
-  const handleCreate = () => {
-    setModalMode('create');
-    setFormData({ LocationName: '', City: '', Description: '' });
-    setSelectedLocation(null);
-    setImageFile(null);
-    setImagePreview(null);
-    setFormErrors({});
-    setShowModal(true);
-  };
-
-  const handleEdit = (location) => {
-    const description = location.Details 
-      ? (typeof location.Details === 'string' ? location.Details : '')
-      : '';
-    
-    setModalMode('edit');
-    setSelectedLocation(location);
-    setFormData({
-      LocationName: location.LocationName || '',
-      City: location.City || '',
-      Description: description
-    });
-    setImagePreview(location.ThumbnailURL || null);
-    setImageFile(null);
-    setFormErrors({});
-    setShowModal(true);
-  };
-
-  const handleDeleteClick = (location) => {
-    setDeleteError('');
-    setModalMode('delete');
-    setSelectedLocation(location);
-    setShowModal(true);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const payload = new FormData();
-      payload.append('LocationName', formData.LocationName);
-      payload.append('City', formData.City);
-      payload.append('Description', formData.Description);
-      
-      if (imageFile) {
-        payload.append('image', imageFile);
-      }
-
-      if (modalMode === 'create') {
-        const response = await api.post('/admin/locations', payload, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
-        if (response.data.success) {
-          toast.success('Tạo địa điểm thành công');
-          fetchLocations(1);
-          setShowModal(false);
-        }
-      } else if (modalMode === 'edit' && selectedLocation) {
-        const response = await api.put(`/admin/locations/${selectedLocation.LocationID}`, payload, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
-        if (response.data.success) {
-          toast.success('Cập nhật địa điểm thành công');
-          fetchLocations(currentPage);
-          setShowModal(false);
-        }
-      }
-    } catch (err) {
-      console.error('Error submitting location:', err);
-      if (err.response?.data?.errors) {
-        setFormErrors(err.response.data.errors);
-      } else {
-        toast.error(err.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại');
-      }
-    }
-  };
-
-  const handleConfirmDelete = async () => {
-    try {
-      const response = await api.delete(`/admin/locations/${selectedLocation.LocationID}`);
-      if (response.data.success) {
-        toast.success('Xóa địa điểm thành công');
-        fetchLocations(currentPage);
-        setShowModal(false);
-      }
-    } catch (err) {
-      setDeleteError(err.response.data.message || "Có lỗi xảy ra khi xóa địa điểm");
-    }
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    if (formErrors[name]) {
-      setFormErrors(prev => ({ ...prev, [name]: null }));
-    }
-  };
-
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    if (file.size > 25 * 1024 * 1024) {
-      setFormErrors(prev => ({ ...prev, image: 'Kích thước ảnh vượt quá giới hạn 25MB.' }));
-      setImageFile(null);
-      setImagePreview(null);
-      return;
-    }
-    if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
-      setFormErrors(prev => ({ ...prev, image: 'Chỉ chấp nhận ảnh PNG, JPG, JPEG.' }));
-      setImageFile(null);
-      setImagePreview(null);
-      return;
-    }
-
-    setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
-    
-    if (formErrors.image) {
-      setFormErrors(prev => ({ ...prev, image: null }));
-    }
-  };
-
-  const handleSearch = () => {
-    setCurrentPage(1);
-    fetchLocations(1);
-  };
-
-  const handleSearchKeyPress = (e) => {
-    if (e.key === 'Enter') handleSearch();
-  };
-
-  const handlePageChange = (page) => {
-    fetchLocations(page);
-  };
-
-  const handleItemPerPageChange = (perPage) => {
-    setItemPerPage(perPage);
-    setCurrentPage(1);
-    fetchLocations(1);
-  };
-
-  const columns = [
-    { key: 'ThumbnailURL', label: 'Ảnh', sortable: false },
-    { key: 'LocationName', label: 'Địa điểm', sortable: true },
-    { key: 'Details', label: 'Mô tả', sortable: false },
-    { key: 'IsFeatured', label: 'Cửa hàng' },
-    { key: 'actions', label: 'Thao tác' }
-  ];
-
-  return (
-    <MainLayout>
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-800">Quản lý địa điểm</h1>
-          <button
-            onClick={handleCreate}
-            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition"
-          >
-            <Plus size={20} />
-            Thêm địa điểm
-          </button>
-        </div>
-
-        <div className="bg-white rounded-lg p-4 shadow flex gap-2">
-          <input
-            type="text"
-            placeholder="Tìm kiếm địa điểm..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            onKeyPress={handleSearchKeyPress}
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-          />
-          <button
-            onClick={handleSearch}
-            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition"
-          >
-            <Search size={20} />
-            Tìm kiếm
-          </button>
-        </div>
-
-        {loading ? (
-          <div className="text-center py-8 bg-white rounded-lg">Đang tải...</div>
-        ) : locations.length === 0 ? (
-          <div className="bg-white rounded-lg p-12 shadow text-center">
-            <div className="text-gray-400 text-6xl mb-4">📭</div>
-            <p className="text-gray-600 text-lg font-medium">Không có địa điểm</p>
-            <p className="text-gray-400 text-sm mt-2">
-              {searchInput ? 'Không tìm thấy địa điểm phù hợp với tìm kiếm của bạn' : 'Hãy thêm địa điểm đầu tiên'}
-            </p>
-            <button
-              onClick={handleRefresh}
-              className="mt-5 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition"
-            >
-              Làm mới
-            </button>
-          </div>
-        ) : (
-          <DataTable
-            columns={columns}
-            data={locations}
-            sortConfig={sortConfig}
-            onSort={(key) => requestSort(key)}
-            renderRow={(location, index) => (
-              <LocationTableRow
-                key={`${location.LocationID}-${index}`}
-                location={location}
-                onEdit={handleEdit}
-                onDelete={handleDeleteClick}
-              />
-            )}
-          />
-        )}
-
-        {!loading && locations.length >= 0 && (
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            itemPerPage={itemPerPage}
-            onPageChange={handlePageChange}
-            onItemPerPageChange={handleItemPerPageChange}
-          />
-        )}
-      </div>
-
-      <Modal
-        isOpen={showModal}
-        title={
-          modalMode === 'create'
-            ? 'Thêm địa điểm mới'
-            : modalMode === 'delete'
-            ? 'Xóa địa điểm?'
-            : 'Cập nhật địa điểm'
-        }
-        onClose={() => setShowModal(false)}
-        size="lg"
-      >
-        {modalMode === 'delete' ? (
-          <div className="space-y-4">
-            <p className="text-gray-600">
-              Bạn có chắc chắn muốn xóa địa điểm <strong>{selectedLocation?.LocationName}</strong> không?
-            </p>
-
-              {deleteError && (
-                <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-600">
-                  {deleteError}
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 sm:px-6 lg:px-8 font-sans">
+            <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
+                
+                {/* Header Logo & Title */}
+                <div className="text-center">
+                    <div className="mx-auto h-12 w-12 bg-[#2C4C3E] rounded-xl flex items-center justify-center shadow-md shadow-[#2C4C3E]/20">
+                        <Lock className="text-white" size={24} />
+                    </div>
+                    <h2 className="mt-6 text-3xl font-bold text-gray-900 tracking-tight">
+                        Lacani System
+                    </h2>
                 </div>
-              )}
 
-            <div className="flex gap-3 pt-4">
-              <button
-                onClick={() => setShowModal(false)}
-                className="flex-1 px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={handleConfirmDelete}
-                className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition"
-              >
-                Xóa
-              </button>
-            </div>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Tên địa điểm <span className="text-red-500 text-xs">*</span>
-              </label>
-              <input
-                type="text"
-                name="LocationName"
-                value={formData.LocationName}
-                onChange={handleInputChange}
-                required
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                  formErrors.LocationName ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="Nhập tên địa điểm"
-              />
-              {formErrors.LocationName && (
-                <p className="text-red-500 text-xs mt-1">{formErrors.LocationName}</p>
-              )}
-            </div>
-
-            <div className="relative">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Thành phố</label>
-            <input
-                type="text"
-                name="City"
-                value={formData.City}
-                onChange={(e) => {
-                handleInputChange(e);
-                setShowCitySuggestions(true); // Hiện gợi ý khi bắt đầu gõ
-                }}
-                onFocus={() => setShowCitySuggestions(true)}
-                onBlur={() => setShowCitySuggestions(false)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                placeholder="Nhập hoặc chọn thành phố"
-                autoComplete="off"
-            />
-            
-            {/* Dropdown danh sách gợi ý */}
-            {showCitySuggestions && (
-                <ul className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                {provinces
-                    .filter((p) => 
-                    p.name.toLowerCase().includes((formData.City || '').toLowerCase())
-                    )
-                    .map((province) => (
-                    <li
-                        key={province.code}
-                        className="px-4 py-2 cursor-pointer hover:bg-green-50 hover:text-green-700 transition"
-                        // Sử dụng onMouseDown thay vì onClick để event này chạy trước onBlur của thẻ input
-                        onMouseDown={(e) => {
-                        e.preventDefault(); 
-                        setFormData((prev) => ({ ...prev, City: province.name }));
-                        setShowCitySuggestions(false);
-                        }}
-                    >
-                        {province.name}
-                    </li>
-                    ))}
-                    
-                {/* Hiển thị khi không tìm thấy kết quả */}
-                {provinces.filter((p) => 
-                    p.name.toLowerCase().includes((formData.City || '').toLowerCase())
-                ).length === 0 && (
-                    <li className="px-4 py-2 text-gray-500 text-sm text-center">
-                    Không tìm thấy thành phố phù hợp
-                    </li>
+                {/* Khung hiển thị thông báo lỗi nếu có */}
+                {error && (
+                    <div className="bg-red-50 border-l-4 border-red-500 p-3 rounded text-sm text-red-700">
+                        {error}
+                    </div>
                 )}
-                </ul>
-            )}
+
+                {/* Form Đăng Nhập */}
+                <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+                    <div className="space-y-4">
+                        {/* Input Email */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Địa chỉ Email
+                            </label>
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                    <Mail size={18} />
+                                </div>
+                                <input
+                                    type="email"
+                                    name="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    className="block w-full pl-10 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-950 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2C4C3E]/20 focus:border-[#2C4C3E] focus:bg-white transition-all"
+                                    placeholder="admin@example.com"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Input Mật khẩu */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Mật khẩu
+                            </label>
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                    <Lock size={18} />
+                                </div>
+                                <input
+                                    type={showPassword ? 'text' : 'password'}
+                                    name="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    className="block w-full pl-10 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-950 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2C4C3E]/20 focus:border-[#2C4C3E] focus:bg-white transition-all"
+                                    placeholder="••••••••"
+                                />
+                                {/* Nút ẩn hiện mật khẩu */}
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                                >
+                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                            <input
+                                id="rememberMe"
+                                name="rememberMe"
+                                type="checkbox"
+                                checked={formData.rememberMe}
+                                onChange={handleChange}
+                                className="h-4 w-4 text-[#2C4C3E] focus:ring-[#2C4C3E] border-gray-300 rounded cursor-pointer accent-[#2C4C3E]"
+                            />
+                            <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-600 cursor-pointer select-none">
+                                Ghi nhớ đăng nhập
+                            </label>
+                        </div>
+
+                        <div className="text-sm">
+                            <a href="#" className="font-medium text-[#2C4C3E] hover:underline">
+                                Quên mật khẩu?
+                            </a>
+                        </div>
+                    </div> */}
+
+                    {/* Nút Đăng Nhập */}
+                    <div>
+                        <button
+                            type="submit"
+                            disabled={isLoading}
+                            className="group relative w-full flex justify-center items-center py-3 px-4 border border-transparent text-sm font-semibold rounded-xl text-white bg-[#2C4C3E] hover:bg-[#1f362c] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2C4C3E] transition-all disabled:opacity-70 disabled:cursor-not-allowed shadow-md shadow-[#2C4C3E]/10"
+                        >
+                            {isLoading ? (
+                                <div className="flex items-center gap-2">
+                                    {/* SVG Spinner quay vòng */}
+                                    <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                    </svg>
+                                    <span>Đang xác thực...</span>
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-1.5 group-hover:translate-x-0.5 transition-transform">
+                                    <span>Đăng nhập</span>
+                                    <ArrowRight size={16} />
+                                </div>
+                            )}
+                        </button>
+                    </div>
+                </form>
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
-              <textarea
-                name="Description"
-                value={formData.Description}
-                onChange={handleInputChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                rows={4}
-                placeholder="Mô tả địa điểm"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Ảnh chính (Thumbnail)
-              </label>
-
-              <div
-                className={`border-2 border-dashed rounded-xl p-4 transition-all
-                  ${
-                    formErrors.image
-                      ? "border-red-400 bg-red-50"
-                      : "border-gray-300 hover:border-green-400"
-                  }`}
-              >
-                <div className="flex flex-col md:flex-row items-center gap-4">
-                  
-                  {/* Preview */}
-                  <div className="shrink-0">
-                    {imagePreview ? (
-                      <ImageDisplay
-                        src={imagePreview}
-                        className="w-28 h-28 object-cover rounded-xl border border-gray-200"
-                      />
-                    ) : (
-                      <div className="w-28 h-28 rounded-xl border border-gray-200 bg-gray-50 flex items-center justify-center text-gray-400 text-sm">
-                        Chưa có ảnh
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Upload */}
-                  <div className="flex-1 w-full">
-                    <input
-                      id="thumbnail-upload"
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageChange}
-                      className="hidden"
-                    />
-
-                    <label
-                      htmlFor="thumbnail-upload"
-                      className="mx-auto cursor-pointer flex w-fit items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-                    >
-                      Chọn ảnh
-                    </label>
-
-                    <p className="mt-2 text-sm text-gray-500 text-center">
-                      JPG, PNG, WEBP • Tối đa 5MB
-                    </p>
-
-                    {formErrors.image && (
-                      <p className="mt-1 text-sm text-red-500">
-                        {formErrors.image}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-3 pt-4">
-              <button
-                type="button"
-                onClick={() => setShowModal(false)}
-                className="flex-1 px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition"
-              >
-                Hủy
-              </button>
-              <button
-                type="submit"
-                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-              >
-                {modalMode === 'create' ? 'Tạo' : 'Cập nhật'}
-              </button>
-            </div>
-          </form>
-        )}
-      </Modal>
-    </MainLayout>
-  );
+        </div>
+    );
 }
