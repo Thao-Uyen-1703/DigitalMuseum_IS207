@@ -1,4 +1,4 @@
-const diadiemModel = require('../../models/diadiemModel');
+const locationModel = require('../../models/locationModel');
 
 const locationServices = {
   getLocationsFilter: async (filters) => {
@@ -7,8 +7,8 @@ const locationServices = {
     const offset = (page - 1) * perPage;
 
     const [results, totalItems] = await Promise.all([
-      diadiemModel.getAdvanceFiltered({ ...filters, perPage, offset }),
-      diadiemModel.countAdvanceFiltered(filters)
+      locationModel.getAdvanceFiltered({ ...filters, perPage, offset }),
+      locationModel.countAdvanceFiltered(filters)
     ]);
 
     const totalPages = Math.ceil(totalItems / perPage) || 1;
@@ -26,7 +26,7 @@ const locationServices = {
   },
 
   getLocationById: async (id) => {
-    const location = await diadiemModel.getLocationById(id);
+    const location = await locationModel.getLocationById(id);
     if (!location) {
       throw { status: 404, message: 'Địa điểm không tồn tại' };
     }
@@ -34,7 +34,7 @@ const locationServices = {
   },
 
   createLocation: async (data) => {
-    const existLocation = await diadiemModel.getLocationByName(data.LocationName);
+    const existLocation = await locationModel.getLocationByName(data.LocationName);
     if (existLocation) {
       throw { status: 400, message: 'Tên địa điểm đã tồn tại' };
     }
@@ -46,21 +46,21 @@ const locationServices = {
       Details: JSON.stringify({ Description: data.Description || '' })
     };
 
-    return await diadiemModel.createLocation(payload);
+    return await locationModel.createLocation(payload);
   },
 
   updateLocation: async (id, data) => {
-    const existLocation = await diadiemModel.getLocationByID(id);
+    const existLocation = await locationModel.getLocationByID(id);
     if (!existLocation) {
       throw { status: 404, message: 'Địa điểm không tồn tại' };
     }
 
-    const sameNameLocation = await diadiemModel.getLocationByName(data.LocationName);
+    const sameNameLocation = await locationModel.getLocationByName(data.LocationName);
     if (sameNameLocation && sameNameLocation.LocationID !== parseInt(id, 10)) {
       throw { status: 400, message: 'Tên địa điểm đã tồn tại' };
     }
 
-    const currentLocation = await diadiemModel.getLocationById(id);
+    const currentLocation = await locationModel.getLocationById(id);
     const payload = {
       LocationName: data.LocationName,
       City: data.City || null,
@@ -68,21 +68,21 @@ const locationServices = {
       Details: JSON.stringify({ Description: data.Description || '' })
     };
 
-    return await diadiemModel.updateLocation(id, payload);
+    return await locationModel.updateLocation(id, payload);
   },
 
   deleteLocation: async (id) => {
-    const exists = await diadiemModel.getLocationByID(id);
+    const exists = await locationModel.getLocationByID(id);
     if (!exists) {
       throw { status: 404, message: 'Địa điểm không tồn tại' };
     }
 
-    const hasProduct = await diadiemModel.existProductInLocation(id);
+    const hasProduct = await locationModel.existProductInLocation(id);
     if (hasProduct) {
       throw { status: 400, message: 'Không thể xóa địa điểm khi còn sản phẩm liên quan' };
     }
 
-    return await diadiemModel.deleteLocation(id);
+    return await locationModel.deleteLocation(id);
   }
 };
 

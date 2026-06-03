@@ -71,7 +71,7 @@ import ImageDisplay from '../../components/common/ImageDisplay';
 
     const fetchLocation = async () => {
       try {
-        const response = await api.get('/diadiem');
+        const response = await api.get('/location');
         setLocation(response.data.data || response.data);
       } catch (err) {
         toast.error('Có lỗi xảy ra khi tải danh sách địa điểm');

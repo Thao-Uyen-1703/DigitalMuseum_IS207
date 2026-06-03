@@ -8,7 +8,7 @@ const path = require('path');
 const saltRounds = 10;
 
 const productRoute = require('./routes/client/productRoute');
-const diadiemRoute = require('./routes/client/diadiemRoute');
+const locationRoute = require('./routes/client/locationRoute');
 const authRoute = require('./routes/authRoute');
 const cartRoute = require('./routes/client/cartRoute');
 const shipmentRoute = require('./routes/client/shipmentRoute');
@@ -20,7 +20,7 @@ const profileRoute = require('./routes/client/profileRoute');
 const statisticsRoute = require('./routes/admin/statisticsRoute');
 const adminProductRoute = require('./routes/admin/productRoute');
 const categoryRoute = require('./routes/admin/categoryRoute');
-const locationRoute = require('./routes/admin/locationRoute');
+const adminLocationRoute = require('./routes/admin/locationRoute');
 const adminOrderRoute = require('./routes/admin/orderRoute');
 const paymentRoute = require('./routes/admin/paymentRoute');
 const adminShipmentRoute = require('./routes/admin/shipmentRoute');
@@ -39,7 +39,7 @@ app.use(cors({
 app.use('/images', express.static(path.join(__dirname, '../public/images')));
 
 app.use('/api/product', productRoute);
-app.use('/api/diadiem', diadiemRoute);
+app.use('/api/location', locationRoute);
 app.use('/api/auth', authRoute);
 app.use('/api/cart', cartRoute);
 app.use('/api/shipment-methods', shipmentRoute);
@@ -51,7 +51,7 @@ app.use('/api/profile', profileRoute);
 app.use('/api/admin/statistics', statisticsRoute);
 app.use('/api/admin/products', adminProductRoute);
 app.use('/api/admin/categories', categoryRoute);
-app.use('/api/admin/locations', locationRoute);
+app.use('/api/admin/locations', adminLocationRoute);
 app.use('/api/admin/orders', adminOrderRoute);
 app.use('/api/admin/payments', paymentRoute);
 app.use('/api/admin/shipments', adminShipmentRoute);
