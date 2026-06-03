@@ -116,6 +116,33 @@ const orderController = {
         message
       });
     }
+  },
+
+  exportInvoice: async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      if (!id) {
+        throw { status: 400, message: "Vui lòng cung cấp ID đơn hàng" };
+      }
+
+      const pdfBuffer = await orderServices.generateInvoicePdf(id);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="Hoa_Don_${id}.pdf"`);
+      res.setHeader('Content-Length', pdfBuffer.length);
+
+      return res.send(pdfBuffer);
+      
+    } catch (error) {
+      console.error("Lỗi controller xuất hóa đơn:", error);
+      const status = error.status || 500;
+      const message = error.message || 'Lỗi hệ thống khi xuất hóa đơn';
+      return res.status(status).json({
+        success: false,
+        message
+      });
+    }
   }
 };
 
