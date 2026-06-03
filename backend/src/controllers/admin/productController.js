@@ -8,10 +8,13 @@ const productController = {
             const perPage = parseInt(req.query.perPage) || 10;
             const search = req.query.search || '';
             const category = req.query.category || '';
-            const isActive = req.query.isActive !== undefined ? req.query.isActive === 'true' : null;
-            let sortConfigs = [];
+            const status = req.query.status || '';
+            const stock = req.query.stock || '';
+            const location = req.query.location || '';
             
+            let sortConfigs = [];
             const sortQuery = req.query.sortConfigs || req.query.sortConfig;
+            
             if (sortQuery) {
                 try {
                     sortConfigs = JSON.parse(sortQuery);
@@ -20,8 +23,7 @@ const productController = {
                 }
             }
 
-            const filters = { page, perPage, search, category, isActive, sortConfigs };
-
+            const filters = { page, perPage, search, category, status, stock, location, sortConfigs };
             const data = await productServices.getProductsFilter(filters);
 
             return res.status(200).json({
@@ -57,13 +59,11 @@ const productController = {
         try {
             const productData = {
                 ...req.body,
-                LocationIDs: JSON.parse(req.body.LocationIDs || '[]')
-            }
+                LocationIDs: req.body.LocationIDs ? JSON.parse(req.body.LocationIDs) : []
+            };
 
             if (req.file) {
                 productData.image = req.file;
-            } else {
-                productData.image = null;
             }
 
             const { error, value } = productValidator.validate(productData, { abortEarly: false });
@@ -87,7 +87,6 @@ const productController = {
             if (value.image) {
                 payload.ImageURL = value.image.filename;
             }
-
             delete payload.image;
 
             const result = await productServices.createProduct(payload);
@@ -110,8 +109,8 @@ const productController = {
 
             const productData = {
                 ...req.body,
-                LocationIDs: JSON.parse(req.body.LocationIDs || '[]')
-            }
+                LocationIDs: req.body.LocationIDs ? JSON.parse(req.body.LocationIDs) : []
+            };
 
             if (req.file) {
                 productData.image = req.file;
@@ -138,7 +137,6 @@ const productController = {
             if (value.image) {
                 payload.ImageURL = value.image.filename;
             }
-
             delete payload.image;
 
             await productServices.updateProduct(id, payload);
@@ -181,7 +179,7 @@ const productController = {
 
             return res.status(200).json({
                 success: true,
-                message: 'Kích hoạt sản phẩm thành công'
+                message: 'Cập nhật trạng thái thành công'
             });
         } catch (err) {
             const statusCode = err.status || 500;

@@ -51,18 +51,26 @@ const productModel = {
     },
 
     getAdvanceFiltered: async (filters) => {
-        let sql = `SELECT p.*, 
-                    (
-                        SELECT GROUP_CONCAT(pl.LocationID)
-                        FROM ProductLocations pl
-                        WHERE pl.ProductID = p.ProductID
-                    ) AS LocationIDs
-                   FROM Products p
-                   WHERE 1=1`;
+        let sql = `
+            SELECT 
+                p.ProductID, p.ProductName, p.SlugName, p.Price, p.Stock, 
+                p.IsActive, p.ImageURL, p.CategoryID, p.OriginLocationID, p.Weight,
+                c.CategoryName,
+                l.LocationName,
+                (
+                    SELECT GROUP_CONCAT(pl.LocationID)
+                    FROM ProductLocations pl
+                    WHERE pl.ProductID = p.ProductID
+                ) AS LocationIDs
+            FROM Products p
+            LEFT JOIN categories c ON p.CategoryID = c.CategoryID
+            LEFT JOIN Locations l ON p.OriginLocationID = l.LocationID
+            WHERE 1=1
+        `;
         let queryParams = [];
 
         if (filters.search) {
-            sql += ` AND (p.ProductName LIKE ?)`;
+            sql += ` AND p.ProductName LIKE ?`;
             queryParams.push(`%${filters.search}%`);
         }
 
@@ -71,10 +79,22 @@ const productModel = {
             queryParams.push(filters.category);
         }
 
-        // if (filters.isActive !== null && filters.isActive !== undefined) {
-        //     sql += ` AND p.IsActive = ?`;
-        //     queryParams.push(filters.IsActive ? 1 : 0);
-        // }
+        if (filters.location) {
+            sql += ` AND p.OriginLocationID = ?`;
+            queryParams.push(filters.location);
+        }
+
+        if (filters.status === 'active') {
+            sql += ` AND p.IsActive = 1`;
+        } else if (filters.status === 'inactive') {
+            sql += ` AND p.IsActive = 0`;
+        }
+
+        if (filters.stock === 'in_stock') {
+            sql += ` AND p.Stock > 0`;
+        } else if (filters.stock === 'out_of_stock') {
+            sql += ` AND p.Stock <= 0`;
+        }
 
         if (filters.sortConfigs && Array.isArray(filters.sortConfigs) && filters.sortConfigs.length > 0) {
             const sortConditions = [];
@@ -100,7 +120,6 @@ const productModel = {
         queryParams.push(filters.perPage, (filters.page - 1) * filters.perPage);
 
         const [rows] = await db.query(sql, queryParams);
-
         return rows;
     },
 
@@ -288,58 +307,29 @@ const productModel = {
                 `
                 INSERT INTO Products
                 (
-                    ProductName,
-                    CategoryID,
-                    OriginLocationID,
-                    SlugName,
-                    CulturalStory,
-                    Price,
-                    Weight,
-                    Stock,
-                    ImageURL,
-                    IsActive
+                    ProductName, CategoryID, OriginLocationID, SlugName,
+                    CulturalStory, Price, Weight, Stock, ImageURL, IsActive
                 )
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 `,
                 [
-                    ProductName,
-                    CategoryID,
-                    OriginLocationID,
-                    SlugName,
-                    CulturalStory,
-                    Price,
-                    Weight,
-                    Stock,
-                    ImageURL,
-                    IsActive
+                    ProductName, CategoryID, OriginLocationID, SlugName,
+                    CulturalStory, Price, Weight, Stock, ImageURL, IsActive
                 ]
             );
 
             const productId = productResult.insertId;
 
             if (LocationIDs.length > 0) {
-                const locationValues = LocationIDs.map(locationId => [
-                    productId,
-                    locationId
-                ]);
-
+                const locationValues = LocationIDs.map(locationId => [productId, locationId]);
                 await connection.query(
-                    `
-                    INSERT INTO ProductLocations
-                    (ProductID, LocationID)
-                    VALUES ?
-                    `,
+                    `INSERT INTO ProductLocations (ProductID, LocationID) VALUES ?`,
                     [locationValues]
                 );
             }
 
             await connection.commit();
-
-            return {
-                ProductID: productId,
-                ...productData
-            };
-
+            return { ProductID: productId, ...productData };
         } catch (error) {
             await connection.rollback();
             throw error;
@@ -353,15 +343,11 @@ const productModel = {
         let queryParams = [];
         const keys = Object.keys(updateData);
 
-        if (keys.length === 0) {
-            return null;
-        }
+        if (keys.length === 0) return null;
 
         keys.forEach((key, index) => {
             sql += `${key} = ?`;
-            if (index < keys.length - 1) {
-                sql += ', ';
-            }
+            if (index < keys.length - 1) sql += ', ';
             queryParams.push(updateData[key]);
         });
 
@@ -376,24 +362,15 @@ const productModel = {
         const connection = await db.getConnection();
         try {
             await connection.beginTransaction();
-
-            await connection.query(
-                `DELETE FROM ProductLocations WHERE ProductID = ?`, 
-                [productId]
-            );
+            await connection.query(`DELETE FROM ProductLocations WHERE ProductID = ?`, [productId]);
 
             if (locationIds && locationIds.length > 0) {
-                const locationValues = locationIds.map(locationId => [
-                    productId,
-                    locationId
-                ]);
-
+                const locationValues = locationIds.map(locationId => [productId, locationId]);
                 await connection.query(
                     `INSERT INTO ProductLocations (ProductID, LocationID) VALUES ?`,
                     [locationValues]
                 );
             }
-
             await connection.commit();
         } catch (error) {
             await connection.rollback();
@@ -404,42 +381,35 @@ const productModel = {
     },
 
     deleteProduct: async (id) => {
-        const sql = `UPDATE Products
-            SET IsActive = 0
-            WHERE ProductID = ?
-        `;
+        const sql = `UPDATE Products SET IsActive = 0 WHERE ProductID = ?`;
         const [result] = await db.query(sql, [id]);
         return result;
     },
 
-    countAdvanceFiltered: async (params) => {
-        let sql = `SELECT COUNT(DISTINCT p.ProductID) as total FROM Products p`;
+    countAdvanceFiltered: async (filters) => {
+        let sql = `SELECT COUNT(DISTINCT p.ProductID) as total FROM Products p WHERE 1=1`;
         let queryParams = [];
 
-        if (params.location) {
-            sql += `
-                JOIN ProductLocations pl ON p.ProductID = pl.ProductID
-                JOIN Locations l ON pl.LocationID = l.LocationID
-            `;
+        if (filters.search) {
+            sql += ` AND p.ProductName LIKE ?`;
+            queryParams.push(`%${filters.search}%`);
         }
 
-        sql += ` WHERE 1=1`;
+        if (filters.category) {
+            sql += ` AND p.CategoryID = ?`;
+            queryParams.push(filters.category);
+        }
 
-        if (params.search) {
-            sql += ` AND (p.ProductName LIKE ?)`;
-            queryParams.push(`%${params.search}%`);
+        if (filters.status === 'active') {
+            sql += ` AND p.IsActive = 1`;
+        } else if (filters.status === 'inactive') {
+            sql += ` AND p.IsActive = 0`;
         }
-        if (params.location) {
-            sql += ` AND l.LocationName = ?`;
-            queryParams.push(params.location);
-        }
-        if (params.priceFrom !== null && params.priceFrom !== undefined) {
-            sql += ` AND p.Price >= ?`;
-            queryParams.push(params.priceFrom);
-        }
-        if (params.priceTo !== null && params.priceTo !== undefined) {
-            sql += ` AND p.Price <= ?`;
-            queryParams.push(params.priceTo);
+
+        if (filters.stock === 'in_stock') {
+            sql += ` AND p.Stock > 0`;
+        } else if (filters.stock === 'out_of_stock') {
+            sql += ` AND p.Stock <= 0`;
         }
 
         const [result] = await db.query(sql, queryParams);
@@ -452,14 +422,8 @@ const productModel = {
     },
 
     getProductLocations: async (productId) => {
-        const sql = `
-            SELECT LocationID
-            FROM ProductLocations
-            WHERE ProductID = ?
-        `;
-
+        const sql = `SELECT LocationID FROM ProductLocations WHERE ProductID = ?`;
         const [rows] = await db.query(sql, [productId]);
-
         return rows.map(item => item.LocationID);
     }
 };

@@ -15,9 +15,7 @@ const productServices = {
 
         const products = results.map(product => ({
             ...product,
-            LocationIDs: product.LocationIDs
-                ? product.LocationIDs.split(',').map(Number)
-                : []
+            LocationIDs: product.LocationIDs ? product.LocationIDs.split(',').map(Number) : []
         }));
 
         return {
@@ -35,9 +33,8 @@ const productServices = {
         return product;
     },
 
-    getProductDetails: async(slug) => {
+    getProductDetails: async (slug) => {
         const product = await productModel.getProductBySlug(slug);
-
         if(!product) {
             throw { status: 404, message: 'Sản phẩm không tồn tại' };
         }
@@ -49,34 +46,29 @@ const productServices = {
         if(product.Details && typeof product.Details === 'string') {
             product.Details = JSON.parse(product.Details);
         }
-
         if(location.Details && typeof location.Details === 'string') {
             location.Details = JSON.parse(location.Details);
         }
 
-        const results = {
-            product: product,
-            reviews: reviews,
-            category: category,
-            location: location
+        return {
+            product,
+            reviews,
+            category,
+            location
         };
-
-        return results;
     },
 
-    createProduct: async(productData) => {
+    createProduct: async (productData) => {
         const existProduct = await productModel.getProductByName(productData.ProductName);
-
         if(existProduct) {
-           throw { status: 400, message: "Tên sản phẩm đã tồn tại" } 
+           throw { status: 400, message: "Tên sản phẩm đã tồn tại" };
         }
 
         const slug = await productServices.generateSlugName(productData.ProductName);
-
         const payload = {
             ProductName: productData.ProductName,
             CategoryID: productData.CategoryID || null,
-            OriginLocationID: productData.OriginLocationID || [],
+            OriginLocationID: productData.OriginLocationID || null,
             SlugName: slug,
             CulturalStory: productData.CulturalStory || null,
             LocationIDs: productData.LocationIDs || [],
@@ -84,19 +76,17 @@ const productServices = {
             Weight: productData.Weight || 0,
             Stock: productData.Stock || 0,
             ImageURL: productData.ImageURL || null,
-            IsActive: 0
-        }
+            IsActive: 1
+        };
 
-        const results = await productModel.createProduct(payload);
-
-        return results;
+        return await productModel.createProduct(payload);
     },
 
     updateProduct: async (id, updateData) => {
         const product = await productModel.getProductById(id);
         if (!product) throw { status: 404, message: 'Sản phẩm không tồn tại' };
 
-        if(updateData.ProductName && updateData.ProductName != product.ProductName) {
+        if(updateData.ProductName && updateData.ProductName !== product.ProductName) {
             updateData.SlugName = await productServices.generateSlugName(updateData.ProductName);
         }
 
@@ -106,8 +96,6 @@ const productServices = {
         if (Object.keys(updateData).length > 0) {
             await productModel.updateProduct(id, updateData);
         }
-
-        await productModel.updateProduct(id, updateData);
 
         if (newLocationIDs) {
             const existLocations = await productModel.getProductLocations(product.ProductID);
@@ -129,27 +117,21 @@ const productServices = {
 
     generateSlugName: async (name) => {
         const baseSlug = slugtify(name);
-
         let slug = baseSlug;
         let counter = 1;
 
         while (await productModel.existSlugName(slug)) {
             slug = `${baseSlug}-${counter++}`;
         }
-
         return slug;
     },
 
     isSameArray: (a, b) => {
-        if (a.length !== b.length) return false;
-
-        const setA = new Set(a);
+        if (!a || !b || a.length !== b.length) return false;
         const setB = new Set(b);
-
-        for (const item of setA) {
+        for (const item of a) {
             if (!setB.has(item)) return false;
         }
-
         return true;
     },
 
@@ -158,7 +140,6 @@ const productServices = {
         if (!product) throw { status: 404, message: 'Sản phẩm không tồn tại' };
 
         const newStatus = product.IsActive === 1 ? 0 : 1;
-        
         await productModel.updateProduct(id, { IsActive: newStatus });
         
         return { ...product, IsActive: newStatus };
