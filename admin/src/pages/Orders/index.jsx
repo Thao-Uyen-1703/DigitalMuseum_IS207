@@ -107,6 +107,42 @@ export default function OrderList() {
     }
   };
 
+  const handleExportInvoice = async () => {
+    if (!orderDetailsData?.OrderID) return;
+    
+    // Hiển thị thông báo đang xử lý
+    const loadingToast = toast.loading('Đang khởi tạo hóa đơn PDF...');
+    
+    try {
+      // 1. Gọi API với responseType là 'blob' để nhận file nhị phân
+      const response = await api.get(`/admin/orders/${orderDetailsData.OrderID}/invoice`, {
+        responseType: 'blob', 
+      });
+      
+      // 2. Tạo một URL ảo từ dữ liệu Blob trả về
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+      
+      // 3. Tạo một thẻ <a> ẩn để giả lập hành động click tải file
+      const link = document.createElement('a');
+      link.href = url;
+      // Đặt tên file khi tải về máy
+      link.setAttribute('download', `Hoa_Don_${orderDetailsData.OrderTracking}.pdf`); 
+      document.body.appendChild(link);
+      
+      // 4. Kích hoạt tải xuống
+      link.click();
+      
+      // 5. Dọn dẹp thẻ <a> và URL ảo để giải phóng bộ nhớ
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('Đã tải hóa đơn thành công!', { id: loadingToast });
+    } catch (error) {
+      console.error('Lỗi khi tải hóa đơn:', error);
+      toast.error('Không thể tải hóa đơn PDF. Vui lòng thử lại.', { id: loadingToast });
+    }
+  };
+
   // ===================== LOGIC VẬN CHUYỂN =====================
   const handleCreateShipment = (order) => {
     setActiveOrder(order);
@@ -536,24 +572,37 @@ export default function OrderList() {
             </div>
 
             {/* TỔNG KẾT TIỀN */}
-            <div className="flex justify-end mt-2">
-              <div className="w-full bg-blue-50/40 p-4 rounded-xl border border-blue-100 space-y-2.5">
-                <div className="flex justify-between text-sm text-gray-600">
-                  <span>Tạm tính:</span>
-                  <span className="font-medium">{formatMoney(orderDetailsData.TotalAmount)}</span>
-                </div>
-                <div className="flex justify-between text-sm text-gray-600">
-                  <span>Phí vận chuyển:</span>
-                  <span className="font-medium">{formatMoney(0)}</span>
-                </div>
+            <div className="flex justify-end mt-2 break-inside-avoid">
+              <div className="w-full sm:w-80 bg-blue-50/40 print:bg-transparent p-4 rounded-xl border border-blue-100 print:border-none space-y-2.5">
                 
-                {/* Đường kẻ đứt phân cách */}
-                <div className="border-t border-dashed border-blue-200 my-2"></div>
-                
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-bold text-gray-800">TỔNG CỘNG:</span>
-                  <span className="text-xl font-black text-blue-600">{formatMoney(orderDetailsData.TotalAmount)}</span>
-                </div>
+                {(() => {
+                  // 1. Tính Tạm tính (Subtotal) = Tổng các cột Total của sản phẩm
+                  const subTotal = orderDetailsData.OrderItems?.reduce((sum, item) => sum + Number(item.Total), 0) || 0;
+                  
+                  // 2. Tính Phí vận chuyển = Tổng thanh toán - Tạm tính
+                  const shippingFee = Number(orderDetailsData.TotalAmount || 0) - subTotal;
+
+                  return (
+                    <>
+                      <div className="flex justify-between text-sm text-gray-600 print:text-gray-800">
+                        <span>Tạm tính:</span>
+                        <span className="font-medium">{formatMoney(subTotal)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm text-gray-600 print:text-gray-800">
+                        <span>Phí vận chuyển:</span>
+                        <span className="font-medium">{formatMoney(shippingFee)}</span>
+                      </div>
+                      
+                      <div className="border-t border-dashed border-blue-200 print:border-gray-400 my-2"></div>
+                      
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-bold text-gray-800">TỔNG CỘNG:</span>
+                        <span className="text-xl font-black text-blue-600 print:text-gray-900">{formatMoney(orderDetailsData.TotalAmount)}</span>
+                      </div>
+                    </>
+                  );
+                })()}
+
               </div>
             </div>
 
@@ -568,7 +617,7 @@ export default function OrderList() {
               </button>
               <button 
                 type="button" 
-                onClick={() => window.print()} // Nút in cơ bản của trình duyệt
+                onClick={handleExportInvoice}
                 className="px-5 py-2.5 bg-gray-900 text-white font-medium rounded-xl text-sm hover:bg-black transition flex items-center gap-2"
               >
                 Xuất hóa đơn
