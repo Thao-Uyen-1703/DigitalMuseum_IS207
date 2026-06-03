@@ -10,6 +10,17 @@ export default function DataTable({
   onSort,
   renderRow
 }) {
+  const getAlignClass = (align) => {
+    switch (align) {
+      case 'center':
+        return 'text-center';
+      case 'right':
+        return 'text-right';
+      default:
+        return 'text-left';
+    }
+  };
+
   return (
     <div
       className="
@@ -35,15 +46,18 @@ export default function DataTable({
                     sortKey={column.key}
                     sortConfig={sortConfig}
                     onSort={onSort}
+                    align={column.align}
+                    width={column.width}
                   />
                 ) : (
                   <th
                     key={`column-${index}`}
-                    className="
-                      px-6 py-4 text-left text-xs
+                    className={`
+                      px-6 py-4 text-xs
                       font-semibold text-gray-600
                       uppercase tracking-wider
-                    "
+                      ${getAlignClass(column.align)}
+                    `}
                   >
                     {column.label}
                   </th>
