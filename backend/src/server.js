@@ -21,6 +21,9 @@ const statisticsRoute = require('./routes/admin/statisticsRoute');
 const adminProductRoute = require('./routes/admin/productRoute');
 const categoryRoute = require('./routes/admin/categoryRoute');
 const locationRoute = require('./routes/admin/locationRoute');
+const adminOrderRoute = require('./routes/admin/orderRoute');
+const paymentRoute = require('./routes/admin/paymentRoute');
+const adminShipmentRoute = require('./routes/admin/shipmentRoute');
 
 const app = express();
 const port = 3000;
@@ -48,6 +51,9 @@ app.use('/api/admin/statistics', statisticsRoute);
 app.use('/api/admin/products', adminProductRoute);
 app.use('/api/admin/categories', categoryRoute);
 app.use('/api/admin/locations', locationRoute);
+app.use('/api/admin/orders', adminOrderRoute);
+app.use('/api/admin/payments', paymentRoute);
+app.use('/api/admin/shipments', adminShipmentRoute);
 
 app.listen(port, () => {
     console.log(`Running at port:${port}`);

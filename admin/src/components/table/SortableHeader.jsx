@@ -4,27 +4,45 @@ import { ChevronUp, ChevronDown } from 'lucide-react';
 export default function SortableHeader({
   label,
   sortKey,
-  sortConfig, // Đã đổi thành số ít (object)
-  onSort
+  sortConfig,
+  onSort,
+  align,
+  width
 }) {
-  // Kiểm tra xem cột này có đang được active sort hay không
   const isActive = sortConfig && sortConfig.key === sortKey;
+
+  const getAlignClass = (align) => {
+    switch (align) {
+      case 'center': return 'text-center';
+      case 'right': return 'text-right';
+      default: return 'text-left';
+    }
+  };
+
+  const getFlexAlign = (align) => {
+    switch (align) {
+      case 'center': return 'justify-center';
+      case 'right': return 'justify-end';
+      default: return 'justify-start';
+    }
+  };
 
   return (
     <th
-      className="
-        px-6 py-4 text-left text-xs font-semibold
+      className={`
+        px-6 py-4 text-xs font-semibold
         text-gray-600 uppercase tracking-wider
         cursor-pointer hover:bg-gray-100
         transition-colors select-none
-      "
+        ${getAlignClass(align)}
+        ${width || ''}
+        `} 
       onClick={() => onSort(sortKey)}
     >
-      <div className="flex items-center gap-1.5">
+      <div className={`flex items-center gap-1.5 ${getFlexAlign(align)}`}>
         {label}
 
         <div className="flex items-center gap-0.5">
-          {/* Đã xóa bỏ đoạn code hiển thị số thứ tự multiple sort ở đây */}
 
           <div className="flex flex-col">
             <ChevronUp
