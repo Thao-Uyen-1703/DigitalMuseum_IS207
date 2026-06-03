@@ -1,6 +1,6 @@
 ﻿const db = require('../config/mysql');
 
-const diadiemModel = {
+const locationModel = {
     // Lấy toàn bộ danh sách địa điểm
     getAll: async () => {
         const [rows] = await db.query('SELECT * FROM locations');
@@ -113,4 +113,4 @@ const diadiemModel = {
     }
 };
 
-module.exports = diadiemModel;
+module.exports = locationModel;
