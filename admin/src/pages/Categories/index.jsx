@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, RefreshCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import MainLayout from '../../components/MainLayout';
 import DataTable from '../../components/table/DataTable';
@@ -19,7 +19,8 @@ export default function CategoryList() {
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState('create');
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [formErrors, setFormErrors] = useState({});
+  const [modalError, setModalError] = useState('');
+  
   const [formData, setFormData] = useState({
     CategoryName: '',
     Description: ''
@@ -27,18 +28,11 @@ export default function CategoryList() {
 
   const { sortConfig, requestSort, clearAllSorts } = useTableSort();
 
-  const handleRefresh = () => {
-    setSearchInput('');
-    setCurrentPage(1);
-    clearAllSorts();
-    fetchCategories();
-  };
-
-  const fetchCategories = async (page = currentPage) => {
+  const fetchCategories = async (page = currentPage, currentSearch = searchInput) => {
     try {
       setLoading(true);
       const params = { page, perPage: itemPerPage };
-      if (searchInput) params.search = searchInput;
+      if (currentSearch) params.search = currentSearch;
       if (sortConfig) params.sortConfigs = JSON.stringify([sortConfig]);
 
       const response = await api.get('/admin/categories', { params });
@@ -49,23 +43,27 @@ export default function CategoryList() {
         setCurrentPage(page);
       }
     } catch (err) {
-      console.error('Error fetching categories:', err);
-      toast.error('Có lỗi xảy ra, vui lòng thử lại');
+      toast.error('Có lỗi xảy ra khi tải dữ liệu');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchCategories();
+    fetchCategories(1);
   }, []);
 
   useEffect(() => {
     setCurrentPage(1);
     fetchCategories(1);
-  }, [searchInput, itemPerPage, sortConfig]);
-  // server returns paginated list in `categories`
-  const paged = categories;
+  }, [itemPerPage, sortConfig]);
+
+  const handleRefresh = () => {
+    setSearchInput('');
+    clearAllSorts();
+    setCurrentPage(1);
+    fetchCategories(1, '');
+  };
 
   const columns = [
     { key: 'CategoryName', label: 'Danh mục', sortable: true },
@@ -78,7 +76,7 @@ export default function CategoryList() {
     setModalMode('create');
     setFormData({ CategoryName: '', Description: '' });
     setSelectedCategory(null);
-    setFormErrors({});
+    setModalError('');
     setShowModal(true);
   };
 
@@ -89,49 +87,59 @@ export default function CategoryList() {
       Description: category.Description ?? ''
     });
     setSelectedCategory(category);
-    setFormErrors({});
+    setModalError('');
     setShowModal(true);
   };
 
   const handleDeleteClick = (category) => {
     setModalMode('delete');
     setSelectedCategory(category);
+    setModalError('');
     setShowModal(true);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setModalError('');
+    
     try {
       if (modalMode === 'create') {
         const response = await api.post('/admin/categories', formData);
         if (response.data.success) {
-          toast.success('Tạo danh mục thành công');
-          fetchCategories();
+          toast.success(response.data.message || 'Tạo danh mục thành công');
+          fetchCategories(1);
           setShowModal(false);
+        } else {
+          setModalError(response.data.message || 'Thêm danh mục thất bại');
         }
       } else if (modalMode === 'edit' && selectedCategory) {
         const response = await api.put(`/admin/categories/${selectedCategory.CategoryID}`, formData);
         if (response.data.success) {
-          toast.success('Cập nhật danh mục thành công');
-          fetchCategories();
+          toast.success(response.data.message || 'Cập nhật danh mục thành công');
+          fetchCategories(currentPage);
           setShowModal(false);
+        } else {
+          setModalError(response.data.message || 'Cập nhật danh mục thất bại');
         }
       }
     } catch (err) {
-      toast.error(err.response.data.message || 'Có lỗi xảy ra, vui lòng thử lại');
+      setModalError(err.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại');
     }
   };
 
   const handleConfirmDelete = async () => {
+    setModalError('');
     try {
       const response = await api.delete(`/admin/categories/${selectedCategory.CategoryID}`);
       if (response.data.success) {
-        toast.success('Xóa danh mục thành công');
-        fetchCategories();
+        toast.success(response.data.message || 'Xóa danh mục thành công');
+        fetchCategories(currentPage);
         setShowModal(false);
+      } else {
+        setModalError(response.data.message || 'Xóa danh mục thất bại');
       }
     } catch (err) {
-      toast.error(err.response.data.message);
+      setModalError(err.response?.data?.message || 'Có lỗi xảy ra khi xóa, vui lòng thử lại');
     }
   };
 
@@ -143,10 +151,6 @@ export default function CategoryList() {
   const handleSearch = () => {
     setCurrentPage(1);
     fetchCategories(1);
-  };
-
-  const handleSearchKeyPress = (e) => {
-    if (e.key === 'Enter') handleSearch();
   };
 
   const handlePageChange = (page) => {
@@ -162,67 +166,80 @@ export default function CategoryList() {
   return (
     <MainLayout>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-800">Quản lý danh mục</h1>
+        
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Quản lý danh mục</h1>
+            <p className="text-sm text-gray-500">Tạo, sửa, tìm kiếm và phân loại danh mục sản phẩm.</p>
+          </div>
           <button
             onClick={handleCreate}
-            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition"
+            className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#2C4C3E] px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#264033] transition"
           >
-            <Plus size={20} />
-            Thêm danh mục
+            <Plus size={18} /> Thêm danh mục
           </button>
         </div>
 
-        <div className="bg-white rounded-lg p-4 shadow flex gap-2">
-          <input
-            type="text"
-            placeholder="Tìm kiếm danh mục..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            onKeyPress={handleSearchKeyPress}
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-          />
-          <button
-            onClick={handleSearch}
-            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition"
-          >
-            <Search size={20} />
-            Tìm kiếm
-          </button>
+        <div className="grid gap-4 md:grid-cols-[1fr_auto] items-center">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full">
+            <div className="flex flex-1 items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 shadow-sm focus-within:border-[#2C4C3E] focus-within:ring-1 focus-within:ring-[#2C4C3E] transition">
+              <Search size={18} className="text-gray-400" />
+              <input
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                placeholder="Tìm kiếm danh mục..."
+                className="w-full bg-transparent text-sm text-gray-700 outline-none"
+              />
+            </div>
+            <button
+              onClick={handleSearch}
+              className="hidden sm:inline-flex items-center justify-center rounded-xl bg-[#2C4C3E] px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#264033] transition"
+            >
+              Tìm kiếm
+            </button>
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <button
+              onClick={handleRefresh}
+              className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 transition"
+            >
+              <RefreshCcw size={18} /> Đặt lại
+            </button>
+          </div>
         </div>
 
         {loading ? (
-          <div className="text-center py-8 bg-white rounded-lg">Đang tải...</div>
-        ) : paged.length === 0 ? (
-          <div className="bg-white rounded-lg p-12 shadow text-center">
+          <div className="text-center py-8 bg-white rounded-xl shadow-sm border border-gray-100">Đang tải...</div>
+        ) : categories.length === 0 ? (
+          <div className="bg-white rounded-xl p-12 shadow-sm border border-gray-100 text-center">
             <div className="text-gray-400 text-6xl mb-4">📭</div>
             <p className="text-gray-600 text-lg font-medium">Không có danh mục</p>
-            <p className="text-gray-400 text-sm mt-2">{searchInput ? 'Không tìm thấy danh mục phù hợp với tìm kiếm của bạn' : 'Hãy thêm danh mục đầu tiên'}</p>
-            <button
-              onClick={handleRefresh}
-              className="mt-5 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition"
-            >
-              Làm mới
-            </button>
+            <p className="text-gray-400 text-sm mt-2">
+              {searchInput ? 'Không tìm thấy danh mục phù hợp với tìm kiếm của bạn' : 'Hãy thêm danh mục đầu tiên'}
+            </p>
           </div>
         ) : (
-          <DataTable
-            columns={columns}
-            data={paged}
-            sortConfig={sortConfig}
-            onSort={(key) => { requestSort(key); }}
-            renderRow={(category, index) => (
-              <CategoryTableRow
-                key={`${category.CategoryID}-${index}`}
-                category={category}
-                onEdit={handleEdit}
-                onDelete={handleDeleteClick}
-              />
-            )}
-          />
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <DataTable
+              columns={columns}
+              data={categories}
+              sortConfig={sortConfig}
+              onSort={(key) => requestSort(key)}
+              renderRow={(category, index) => (
+                <CategoryTableRow
+                  key={`${category.CategoryID}-${index}`}
+                  category={category}
+                  onEdit={handleEdit}
+                  onDelete={handleDeleteClick}
+                />
+              )}
+            />
+          </div>
         )}
 
-        {!loading && paged.length >= 0 && totalPages >= 1 && (
+        {!loading && categories.length > 0 && (
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
@@ -235,52 +252,96 @@ export default function CategoryList() {
 
       <Modal
         isOpen={showModal}
-        title={modalMode === 'create' ? 'Thêm danh mục mới' : modalMode === 'delete' ? 'Xóa danh mục?' : 'Cập nhật danh mục'}
+        title={
+          modalMode === 'create'
+            ? 'Thêm danh mục mới'
+            : modalMode === 'delete'
+            ? 'Xóa danh mục?'
+            : 'Cập nhật danh mục'
+        }
         onClose={() => setShowModal(false)}
         size="md"
       >
         {modalMode === 'delete' ? (
-          <div className="space-y-4">
-            <p className="text-gray-600">Bạn có chắc chắn muốn xóa danh mục <strong>{selectedCategory?.CategoryName}</strong> không?</p>
-            <div className="flex gap-3 pt-4">
-              <button onClick={() => setShowModal(false)} className="flex-1 px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition">Hủy</button>
-              <button onClick={handleConfirmDelete} className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition">Xóa</button>
+          <div className="space-y-6">
+            <p className="text-gray-600">
+              Bạn có chắc chắn muốn xóa danh mục <strong>{selectedCategory?.CategoryName}</strong> không? Hành động này không thể hoàn tác.
+            </p>
+            
+            {modalError && (
+              <div className="text-red-500 text-sm font-medium text-center">
+                {modalError}
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowModal(false)}
+                className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="flex-1 px-4 py-3 bg-red-600 text-white font-medium rounded-xl hover:bg-red-700 transition"
+              >
+                Xóa danh mục
+              </button>
             </div>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tên danh mục <span className="text-red-500 text-xs">*</span></label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Tên danh mục <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 name="CategoryName"
                 value={formData.CategoryName}
                 onChange={handleInputChange}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${formErrors.CategoryName ? 'border-red-500' : 'border-gray-300'}`}
+                required
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2C4C3E] focus:border-transparent transition"
                 placeholder="Nhập tên danh mục"
               />
             </div>
 
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
-                <textarea
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Mô tả</label>
+              <textarea
                 name="Description"
                 value={formData.Description}
                 onChange={handleInputChange}
                 maxLength={250}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2C4C3E] focus:border-transparent transition"
                 rows={4}
                 placeholder="Mô tả ngắn cho danh mục"
-                />
-                {/* Bộ đếm ký tự */}
-                <div className="text-right text-xs text-gray-400 mt-1">
+              />
+              <div className="text-right text-xs text-gray-400 mt-1.5">
                 {formData.Description.length}/250 ký tự
-                </div>
+              </div>
             </div>
 
+            {modalError && (
+              <div className="text-red-500 text-sm font-medium text-center pt-2">
+                {modalError}
+              </div>
+            )}
+
             <div className="flex gap-3 pt-4">
-              <button type="button" onClick={() => setShowModal(false)} className="flex-1 px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition">Hủy</button>
-              <button type="submit" className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">{modalMode === 'create' ? 'Tạo' : 'Cập nhật'}</button>
+              <button
+                type="button"
+                onClick={() => setShowModal(false)}
+                className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition"
+              >
+                Hủy
+              </button>
+              <button
+                type="submit"
+                className="flex-1 px-4 py-3 bg-[#2C4C3E] text-white font-medium rounded-xl hover:bg-[#264033] transition"
+              >
+                {modalMode === 'create' ? 'Tạo danh mục' : 'Lưu thay đổi'}
+              </button>
             </div>
           </form>
         )}
