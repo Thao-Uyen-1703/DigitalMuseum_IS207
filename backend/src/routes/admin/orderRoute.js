@@ -7,6 +7,8 @@ const roleMiddlware = require('../../middleware/roleMiddleware');
 router.use(authMiddleware);
 router.use(roleMiddlware('Staff', 'Manager', 'Admin'));
 
+router.get('/:id/invoice', orderController.exportInvoice);
+
 router.get('/', orderController.getAll);
 router.get('/:id', orderController.getDetails);
 router.post('/', orderController.create);
