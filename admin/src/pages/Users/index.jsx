@@ -19,6 +19,7 @@ export default function UserList() {
   const [itemPerPage, setItemPerPage] = useState(10);
   const [searchInput, setSearchInput] = useState('');
   const [filterRole, setFilterRole] = useState('All');
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState('create');
   const [selectedUser, setSelectedUser] = useState(null);
@@ -46,7 +47,6 @@ export default function UserList() {
         setCurrentPage(page);
       }
     } catch (err) {
-      console.error(err);
       toast.error('Không thể tải danh sách người dùng.');
     } finally {
       setLoading(false);
@@ -54,30 +54,21 @@ export default function UserList() {
   };
 
   useEffect(() => {
-    fetchUsers(1, itemPerPage, '', 'All', null);
-  }, []);
-
-  useEffect(() => {
     setCurrentPage(1);
     fetchUsers(1, itemPerPage, searchInput, filterRole, sortConfig);
-  }, [sortConfig]);
+  }, [itemPerPage, filterRole, sortConfig, refreshTrigger]);
 
   const handleSearch = () => {
     setCurrentPage(1);
     fetchUsers(1, itemPerPage, searchInput, filterRole, sortConfig);
   };
 
-  const handleFilterRole = (role) => {
-    setFilterRole(role);
-    setCurrentPage(1);
-    fetchUsers(1, itemPerPage, searchInput, role, sortConfig);
-  };
-
   const handleRefresh = () => {
     setSearchInput('');
     setFilterRole('All');
     clearAllSorts();
-    fetchUsers(1, itemPerPage, '', 'All', null);
+    setCurrentPage(1);
+    setRefreshTrigger(prev => prev + 1);
   };
 
   const openCreateModal = () => {
@@ -99,18 +90,6 @@ export default function UserList() {
     });
     setFormErrors({});
     setShowModal(true);
-  };
-
-  const handleToggleActive = async (user) => {
-    try {
-      const updated = { ...user, IsActive: !Boolean(user.IsActive) };
-      await api.put(`/admin/users/${user.UserID}`, updated);
-      toast.success(`Đã ${updated.IsActive ? 'kích hoạt' : 'vô hiệu'} người dùng`);
-      fetchUsers(currentPage, itemPerPage, searchInput, filterRole, sortConfig);
-    } catch (err) {
-      console.error(err);
-      toast.error('Thay đổi trạng thái không thành công.');
-    }
   };
 
   const handleSubmit = async (event) => {
@@ -156,14 +135,9 @@ export default function UserList() {
     { key: 'actions', label: 'Thao tác' }
   ];
 
-    const handlePageChange = (page) => {
-        fetchUsers(page, itemPerPage, searchInput, sortConfig);
-    };
-
-    const handleItemPerPageChange = (perPage) => {
-        setItemPerPage(perPage);
-        fetchUsers(1, perPage, searchInput, sortConfig);
-    };
+  const handlePageChange = (page) => {
+    fetchUsers(page, itemPerPage, searchInput, filterRole, sortConfig);
+  };
 
   return (
     <MainLayout>
@@ -204,7 +178,7 @@ export default function UserList() {
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             <select
               value={filterRole}
-              onChange={(e) => handleFilterRole(e.target.value)}
+              onChange={(e) => setFilterRole(e.target.value)}
               className="rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 shadow-sm outline-none"
             >
               {roleOptions.map((role) => (
@@ -239,7 +213,6 @@ export default function UserList() {
                     key={user.UserID}
                     user={user}
                     onEdit={openEditModal}
-                    onToggleActive={handleToggleActive}
                   />
                 )}
               />
@@ -249,11 +222,11 @@ export default function UserList() {
 
         {!loading && users.length > 0 && (
           <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              itemPerPage={itemPerPage}
-              onPageChange={handlePageChange}
-              onItemPerPageChange={handleItemPerPageChange}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            itemPerPage={itemPerPage}
+            onPageChange={handlePageChange}
+            onItemPerPageChange={(perPage) => setItemPerPage(perPage)}
           />
         )}
 
@@ -261,32 +234,32 @@ export default function UserList() {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="grid gap-4">
               <label className="block text-sm font-medium text-gray-700">
-                Họ tên
+                Họ tên <span className="text-red-600">*</span>
                 <input
                   value={formData.FullName}
                   onChange={(e) => setFormData({ ...formData, FullName: e.target.value })}
-                  className="mt-2 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700 outline-none focus:border-[#2C4C3E]"
+                  className={`mt-2 w-full rounded-xl border bg-gray-50 px-4 py-3 text-sm text-gray-700 outline-none focus:border-[#2C4C3E] ${formErrors.FullName ? 'border-red-500' : 'border-gray-200'}`}
                 />
                 {formErrors.FullName && <p className="mt-1 text-xs text-red-600">{formErrors.FullName}</p>}
               </label>
 
               <label className="block text-sm font-medium text-gray-700">
-                Email
+                Email <span className="text-red-600">*</span>
                 <input
                   type="email"
                   value={formData.Email}
                   onChange={(e) => setFormData({ ...formData, Email: e.target.value })}
-                  className="mt-2 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700 outline-none focus:border-[#2C4C3E]"
+                  className={`mt-2 w-full rounded-xl border bg-gray-50 px-4 py-3 text-sm text-gray-700 outline-none focus:border-[#2C4C3E] ${formErrors.Email ? 'border-red-500' : 'border-gray-200'}`}
                 />
                 {formErrors.Email && <p className="mt-1 text-xs text-red-600">{formErrors.Email}</p>}
               </label>
 
               <label className="block text-sm font-medium text-gray-700">
-                Chức vụ
+                Chức vụ <span className="text-red-600">*</span>
                 <select
                   value={formData.Role}
                   onChange={(e) => setFormData({ ...formData, Role: e.target.value })}
-                  className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 outline-none focus:border-[#2C4C3E]"
+                  className={`mt-2 w-full rounded-xl border bg-white px-4 py-3 text-sm text-gray-700 outline-none focus:border-[#2C4C3E] ${formErrors.Role ? 'border-red-500' : 'border-gray-200'}`}
                 >
                   <option value="Customer">Customer</option>
                   <option value="Staff">Staff</option>
