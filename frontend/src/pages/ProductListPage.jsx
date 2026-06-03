@@ -74,7 +74,7 @@ const updateUrlParams = (newFilters, page, search) => {
   useEffect(() => {
     const getLocations = async () => {
       try {
-        const locations = await api.get('/diadiem');
+        const locations = await api.get('/location');
         setLocationList(locations.data.data || []);
       } catch (err) {
         console.error('Error fetching locations:', err);
