@@ -8,45 +8,34 @@ const statisticsServices = {
 
         const [
             currentMonthUsers,
-            previousMonthUsers,
             totalUsers,
 
             totalProducts,
             activeProducts,
 
             currentMonthOrders,
-            previousMonthOrders,
             totalOrders,
 
             currentMonthRevenue,
-            previousMonthRevenue,
             totalRevenue
         ] = await Promise.all([
             userModel.getUsersCountByMonth(month, year),
-            userModel.getUsersCountByMonth(previousMonth, previousYear),
             userModel.getUsersCount(),
 
             productModel.getProductsCount(),
             productModel.getProductsCountByStatus(1),
 
             orderModel.getOrdersCountByMonth(month, year),
-            orderModel.getOrdersCountByMonth(previousMonth, previousYear),
             orderModel.getOrdersCount(),
 
             orderModel.getOrdersRevenueByMonth(month, year),
-            orderModel.getOrdersRevenueByMonth(previousMonth, previousYear),
             orderModel.getOrdersRevenue()
         ]);
-
-        const { diff: userDiff, growth: userGrowth } = statisticsServices.getDiff(currentMonthUsers, previousMonthUsers);
-        const { diff: orderDiff, growth: orderGrowth } = statisticsServices.getDiff(currentMonthOrders, previousMonthOrders);
-        const { diff: revenueDiff, growth: revenueGrowth } = statisticsServices.getDiff(currentMonthRevenue, previousMonthRevenue);
 
         const payload = {
             user: {
                 total: totalUsers,
-                diff: userDiff,
-                growth: userGrowth
+                currentMonth: currentMonthUsers
             },
             product: {
                 total: totalProducts,
@@ -54,13 +43,11 @@ const statisticsServices = {
             },
             order: {
                 total: totalOrders,
-                diff: orderDiff,
-                growth: orderGrowth
+                currentMonth: currentMonthOrders
             },
             revenue: {
                 total: totalRevenue,
-                diff: revenueDiff,
-                growth: revenueGrowth
+                currentMonth: currentMonthRevenue
             }
         }
 

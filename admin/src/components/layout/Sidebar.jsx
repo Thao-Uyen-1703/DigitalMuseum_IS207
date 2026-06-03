@@ -24,8 +24,6 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
   const { user, logout } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  console.log(user);
-
   const handleLogout = async () => {
     try {
       await api.post('/auth/logout');

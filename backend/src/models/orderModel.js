@@ -303,12 +303,11 @@ const orderModel = {
             JOIN products p ON p.ProductID = od.ProductID 
             JOIN categories c ON c.CategoryID = p.CategoryID 
             JOIN orders o ON o.OrderID = od.OrderID
-            WHERE o.Status = 'Delivered'
+            WHERE o.Status = 'Completed'
             AND YEAR(o.OrderDate) = ?
             GROUP BY c.CategoryID, c.CategoryName 
             ORDER BY totalQuantity DESC
         `;
-
         const [rows] = await db.query(query, [year]);
 
         return rows.map(item => ({

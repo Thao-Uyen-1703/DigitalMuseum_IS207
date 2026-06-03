@@ -2,7 +2,6 @@ const categoryModel = require('../../models/categoryModel');
 
 const categoryServices = {
     getAllCategory: async() => {
-        // Backwards-compatible: return all categories with counts attached
         const categories = await categoryModel.getAllCategory();
         const counts = await categoryModel.getProductCounts();
 
