@@ -8,6 +8,7 @@ import ProductList from './pages/Products';
 import CategoryList from './pages/Categories';
 import LocationList from './pages/Locations';
 import OrderList from './pages/Orders';
+import UserList from './pages/Users';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
           <Route path="/danh-muc" element={<CategoryList />} />
           <Route path="/dia-diem" element={<LocationList />} />
           <Route path="/don-hang" element={<OrderList />} />
+          <Route path="/nguoi-dung" element={<UserList />} />
         </Route>
       </Routes>
     </>

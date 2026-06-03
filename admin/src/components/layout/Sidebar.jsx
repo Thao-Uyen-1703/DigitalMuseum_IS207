@@ -7,12 +7,14 @@ import { toast } from 'sonner';
 import api from '../../api/axiosClient';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import ImageDisplay from '../common/ImageDisplay';
 
 const menuItems = [
   { title: 'Thống kê', icon: LayoutDashboard, navigate: '/' },
   { title: 'Địa điểm', icon: MapPin, navigate: '/dia-diem'},
   { title: 'Sản phẩm', icon: Package, navigate: '/san-pham'},
   { title: 'Danh mục', icon: Tags, navigate: '/danh-muc' },
+  { title: 'Người dùng', icon: User, navigate: '/nguoi-dung' },
   { title: 'Đơn hàng', icon: ShoppingCart, navigate: '/don-hang' },
   { title: 'Quản lý blog', icon: FileText, navigate: '/blog' },
 ];
@@ -21,6 +23,8 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  console.log(user);
 
   const handleLogout = async () => {
     try {
@@ -78,14 +82,28 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       {/* Footer / User Info */}
       <div className={`relative p-4 border-t border-white/10 flex ${isOpen ? 'flex-row items-center justify-between' : 'flex-col items-center gap-4'}`}>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-white/20 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold backdrop-blur-sm">
-            HT
+          <div className="w-10 h-10 bg-white/20 rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden backdrop-blur-sm">
+            {user.avatar ? (
+              <ImageDisplay
+                src={user.avatar}
+                alt={user.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <User size={20} className="text-white" />
+            )}
           </div>
+
           {isOpen && (
-            <div className="flex flex-col whitespace-nowrap">
-              <span className="text-sm font-semibold truncate text-white">Hoàng Trung</span>
-              <span className="text-xs text-gray-400">Super Admin</span>
-            </div>
+          <div className="flex flex-col min-w-0">
+            <span className="text-xs font-semibold text-white truncate">
+              {user.name}
+            </span>
+
+            <span className="text-xs text-gray-400 truncate">
+              {user.role}
+            </span>
+          </div>
           )}
         </div>
 
