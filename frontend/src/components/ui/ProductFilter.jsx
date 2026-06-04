@@ -37,10 +37,11 @@ export default function ProductFilter({ filters, setFilters, locationList }) {
     }));
   };
 
-  const handleLocationChange = (locationName) => {
-    const isCurrentActive = filters.location === locationName;
+  // ĐÃ SỬA: Lọc theo LocationID
+  const handleLocationChange = (locationId) => {
+    const isCurrentActive = String(filters.location) === String(locationId);
     setFilters({
-      location: isCurrentActive ? '' : locationName
+      location: isCurrentActive ? '' : String(locationId)
     });
   };
 
@@ -67,26 +68,22 @@ export default function ProductFilter({ filters, setFilters, locationList }) {
     })
   };
 
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('vi-VN').format(price);
-  };
-
   return (
-    <div className="bg-white rounded-lg p-4 border border-gray-200">
+    <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
       {/* Location Filter */}
-      <div className="mb-6 pb-6 border-b border-gray-200">
+      <div className="mb-6 pb-6 border-b border-gray-100">
         <button
           onClick={() => toggleSection('location')}
-          className="w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-amber-600 transition-colors"
+          className="w-full flex items-center justify-between text-base font-bold text-gray-800 hover:text-amber-600 transition-colors"
         >
-          Địa điểm
+          Địa điểm xuất xứ
           <ChevronDown
             className={`w-5 h-5 transition-transform ${expandedSections.location ? 'rotate-180' : ''}`}
           />
         </button>
 
         {expandedSections.location && (
-          <div className="mt-4 space-y-2">
+          <div className="mt-4 space-y-3">
             {locationList.map((location) => (
               <label
                 key={location.LocationID}
@@ -94,11 +91,12 @@ export default function ProductFilter({ filters, setFilters, locationList }) {
               >
                 <input
                   type="checkbox"
-                  checked={filters.location.includes(location.LocationName)}
-                  onChange={() => handleLocationChange(location.LocationName)}
-                  className="w-4 h-4 rounded border-gray-300 text-amber-600 cursor-pointer accent-amber-600"
+                  // ĐÃ SỬA: So sánh LocationID
+                  checked={String(filters.location) === String(location.LocationID)}
+                  onChange={() => handleLocationChange(location.LocationID)}
+                  className="w-4 h-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500 cursor-pointer accent-amber-600 transition-all"
                 />
-                <span className="text-sm text-gray-700 group-hover:text-amber-600 transition-colors">
+                <span className="text-sm font-medium text-gray-600 group-hover:text-amber-600 transition-colors">
                   {location.LocationName}
                 </span>
               </label>
@@ -108,10 +106,10 @@ export default function ProductFilter({ filters, setFilters, locationList }) {
       </div>
 
       {/* Price Filter */}
-      <div className="mb-6 pb-6 border-b border-gray-200">
+      <div className="mb-6 pb-6 border-b border-gray-100">
         <button
           onClick={() => toggleSection('price')}
-          className="w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-amber-600 transition-colors"
+          className="w-full flex items-center justify-between text-base font-bold text-gray-800 hover:text-amber-600 transition-colors"
         >
           Khoảng Giá
           <ChevronDown
@@ -121,64 +119,58 @@ export default function ProductFilter({ filters, setFilters, locationList }) {
 
         {expandedSections.price && (
           <div className="mt-4 space-y-4">
-            {/* Price Input Fields */}
-            <div className="space-y-2">
+            <div className="space-y-3">
               <div>
-                <label className="text-xs text-gray-600">Từ</label>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Từ (VNĐ)</label>
                 <input
                   type="number"
                   value={localPriceFrom}
                   onChange={(e) => setLocalPriceFrom(Math.max(0, parseInt(e.target.value) || ''))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
                   placeholder="0"
                 />
               </div>
               <div>
-                <label className="text-xs text-gray-600">Đến</label>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Đến (VNĐ)</label>
                 <input
                   type="number"
                   value={localPriceTo}
                   onChange={(e) => setLocalPriceTo(Math.max(0, parseInt(e.target.value) || ''))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  placeholder="1000000"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                  placeholder="1.000.000"
                 />
               </div>
-              <div>
-                <button
-                  type="button"
-                  onClick={handleSubmitPriceRange}
-                  className="w-full py-1.5 bg-amber-600 text-white rounded text-xs font-medium hover:bg-amber-700 transition-colors"
-                >
-                  Áp dụng khoảng giá
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={handleSubmitPriceRange}
+                className="w-full py-2 bg-amber-50 text-amber-700 hover:bg-amber-600 hover:text-white rounded-lg text-sm font-semibold transition-colors"
+              >
+                Áp dụng bộ lọc
+              </button>
             </div>
             
-
-            {/* Price Presets */}
-            <div className="space-y-2">
-              <p className="text-xs text-gray-600 font-semibold">Mức giá phổ biến:</p>
+            <div className="space-y-2 pt-2">
+              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Mức giá phổ biến</p>
               <div className="space-y-1">
                 {priceRage.map((preset) => {
                   const currentFrom = filters.priceFrom !== undefined && filters.priceFrom !== null ? String(filters.priceFrom) : "";
                   const currentTo = filters.priceTo !== undefined && filters.priceTo !== null ? String(filters.priceTo) : "";
-                  
                   const presetMin = preset.min !== undefined && preset.min !== null ? String(preset.min) : "";
                   const presetMax = preset.max !== undefined && preset.max !== null ? String(preset.max) : "";
-
                   const isActive = currentFrom === presetMin && currentTo === presetMax;
+                  
                   return (
                     <button
-                    type="button"
-                    key={preset.label}
-                    onClick={() => handlePresetPriceClick(preset.min, preset.max)}
-                    className={`w-full text-left text-xs px-2.5 py-2 rounded transition-colors ${
-                      isActive
-                        ? 'bg-amber-50 text-amber-700 font-semibold border border-amber-200'
-                        : 'text-gray-600 hover:bg-gray-50 border border-transparent'
-                    }`}>
-                    {preset.label}
-                  </button> 
+                      type="button"
+                      key={preset.label}
+                      onClick={() => handlePresetPriceClick(preset.min, preset.max)}
+                      className={`w-full text-left text-xs px-3 py-2.5 rounded-lg transition-colors ${
+                        isActive
+                          ? 'bg-amber-600 text-white font-semibold shadow-sm'
+                          : 'text-gray-600 hover:bg-gray-100 font-medium'
+                      }`}>
+                      {preset.label}
+                    </button> 
                   )
                 })}
               </div>
@@ -191,7 +183,7 @@ export default function ProductFilter({ filters, setFilters, locationList }) {
       <div>
         <button
           onClick={() => toggleSection('sort')}
-          className="w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-amber-600 transition-colors"
+          className="w-full flex items-center justify-between text-base font-bold text-gray-800 hover:text-amber-600 transition-colors"
         >
           Sắp xếp theo
           <ChevronDown
@@ -200,7 +192,7 @@ export default function ProductFilter({ filters, setFilters, locationList }) {
         </button>
 
         {expandedSections.sort && (
-          <div className="mt-4 space-y-2">
+          <div className="mt-4 space-y-3">
             {sortOptions.map((option) => (
               <label
                 key={option.value}
@@ -212,9 +204,9 @@ export default function ProductFilter({ filters, setFilters, locationList }) {
                   value={option.value}
                   checked={filters.sort === option.value}
                   onChange={() => handleSortChange(option.value)}
-                  className="w-4 h-4 border-gray-300 text-amber-600 cursor-pointer accent-amber-600"
+                  className="w-4 h-4 border-gray-300 text-amber-600 focus:ring-amber-500 cursor-pointer accent-amber-600 transition-all"
                 />
-                <span className="text-sm text-gray-700 group-hover:text-amber-600 transition-colors">
+                <span className="text-sm font-medium text-gray-600 group-hover:text-amber-600 transition-colors">
                   {option.label}
                 </span>
               </label>
