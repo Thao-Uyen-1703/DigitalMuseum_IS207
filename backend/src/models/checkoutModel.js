@@ -1,9 +1,7 @@
 const db = require('../config/mysql');
 
 const checkoutModel = {
-    // Lấy thông tin đơn giá của sản phẩm để tính tổng tiền
     getProductsPrices: async (productIds) => {
-        // Giả định bảng của bạn tên là 'products' và có cột 'ProductID', 'Price'
         const [rows] = await db.query(
             `SELECT ProductID, Price AS UnitPrice FROM products WHERE ProductID IN (?)`,
             [productIds]
@@ -11,7 +9,6 @@ const checkoutModel = {
         return rows;
     },
 
-    // Kiểm tra địa chỉ của user đã tồn tại chưa
     findUserAddress: async (userId, addressLine, district, city) => {
         const [rows] = await db.query(
             `SELECT AddressID FROM useraddresses 
@@ -22,7 +19,6 @@ const checkoutModel = {
         return rows.length > 0 ? rows[0] : null;
     },
 
-    // Tạo địa chỉ mới cho user
     createUserAddress: async (data) => {
         const [result] = await db.query(
             `INSERT INTO useraddresses (UserID, ReceiverName, Phone, AddressLine, District, City, Country, isDefault) 
@@ -32,7 +28,6 @@ const checkoutModel = {
         return result.insertId;
     },
 
-    // Kiểm tra phương thức vận chuyển
     getShippingMethod: async (methodId) => {
         const [rows] = await db.query(
             `SELECT ShippingMethodID, Price FROM shippingmethods WHERE ShippingMethodID = ? LIMIT 1`,
@@ -43,13 +38,11 @@ const checkoutModel = {
 
     generateTrackingNumber: () => {
         const today = new Date();
-        // Lấy ngày, tháng, 2 số cuối của năm
         const dd = String(today.getDate()).padStart(2, '0');
         const mm = String(today.getMonth() + 1).padStart(2, '0');
         const yy = String(today.getFullYear()).slice(-2);
         const dateStr = `${dd}${mm}${yy}`;
 
-        // Tạo 6 ký tự ngẫu nhiên (chữ in hoa + số)
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
         let randomStr = '';
         for (let i = 0; i < 6; i++) {
@@ -59,22 +52,50 @@ const checkoutModel = {
         return `LCN${dateStr}${randomStr}`;
     },
 
-    // Xử lý ghi dữ liệu đơn hàng bằng Transaction
     createOrderTransaction: async (orderData) => {
         const connection = await db.getConnection();
         await connection.beginTransaction();
 
         try {
+
+            const sortedItems = [...orderData.items].sort((a, b) => a.productId - b.productId);
+
+            for (const item of sortedItems) {
+                const [stockResult] = await connection.query(
+                    `SELECT Stock, ProductName FROM products WHERE ProductID = ? FOR UPDATE`,
+                    [item.productId]
+                );
+
+                if (stockResult.length === 0) {
+                    throw { status: 404, message: `Sản phẩm (ID: ${item.productId}) không tồn tại.` };
+                }
+
+                const currentStock = stockResult[0].Stock;
+                const productName = stockResult[0].ProductName;
+
+                if (currentStock < item.quantity) {
+                    throw { 
+                        status: 400, 
+                        message: `Sản phẩm "${productName}" chỉ còn lại ${currentStock} chiếc. Vui lòng cập nhật lại giỏ hàng.` 
+                    };
+                }
+
+                await connection.query(
+                    `UPDATE products SET Stock = Stock - ? WHERE ProductID = ?`,
+                    [item.quantity, item.productId]
+                );
+            }
+
             const trackingNum = checkoutModel.generateTrackingNumber();
 
             // 1. Lưu thông tin vào bảng orders
             const [orderResult] = await connection.query(
-                `INSERT INTO orders (UserID, AddressID, CouponID, OrderDate, GuestDetails, OrderTracking ,TotalAmount, Status) 
-                 VALUES (?, ?, NULL, NOW(), ?, ? , ?, 'Pending')`,
+                `INSERT INTO orders (UserID, CouponID, OrderDate, ShippingInfo, Note, OrderTracking ,TotalAmount) 
+                 VALUES (?, NULL, NOW(), ?, ?, ?, ?)`,
                 [
                     orderData.userId, 
-                    orderData.addressId,
-                    orderData.guestDetails,
+                    orderData.shippingInfo,
+                    orderData.note,
                     trackingNum,
                     orderData.totalAmount
                 ]
@@ -82,8 +103,6 @@ const checkoutModel = {
 
             const orderId = orderResult.insertId;
 
-            // 2. Lưu thông tin vào bảng orderdetails
-            // Format data thành mảng 2 chiều để insert nhiều dòng cùng lúc
             const orderDetailsValues = orderData.items.map(item => [
                 orderId, 
                 item.productId, 
@@ -96,30 +115,25 @@ const checkoutModel = {
                 [orderDetailsValues]
             );
 
-            // 3. Lưu thông tin vào bảng shipments
             await connection.query(
                 `INSERT INTO shipments (OrderID, ShippingMethodID, TrackingNumber, ShippedDate, DeliveredDate) 
                  VALUES (?, ?, NULL, NULL, NULL)`,
                 [orderId, orderData.shippingMethodId]
             );
 
-            // 4. Lưu thông tin bảng payments
             await connection.query(
                 `INSERT INTO payments (OrderID, PaymentMethod, CreateAt, Amount) 
                  VALUES (?, ?, NOW(), ?)`,
                 [orderId, orderData.paymentMethod, orderData.totalAmount]
             );
 
-            // Xác nhận transaction
             await connection.commit();
             return trackingNum;
 
         } catch (error) {
-            // Có lỗi xảy ra thì hoàn tác lại toàn bộ dữ liệu vừa insert
             await connection.rollback();
             throw { status: 500, message: error };
         } finally {
-            // Trả connection lại cho pool
             connection.release();
         }
     }

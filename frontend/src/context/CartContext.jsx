@@ -25,37 +25,35 @@ export default function CartProvider({ children }) {
     setIsSyncing(true);
     try {
       const localCart = JSON.parse(localStorage.getItem('guest_cart')) || [];
-      
-      // 1. Gộp giỏ hàng nếu có
       if (localCart.length > 0) {
-        await api.post('/cart/merge', { 
-          items: localCart.map(item => ({
-            productId: item.productId,
-            quantity: item.quantity
-          })) 
-        });
-        localStorage.removeItem('guest_cart');
+        try {
+          await api.post('/cart/merge', { 
+            items: localCart.map(item => ({
+              productId: item.productId,
+              quantity: item.quantity
+            })) 
+          });
+          localStorage.removeItem('guest_cart');
+        } catch (mergeError) {
+          console.error('Lỗi khi merge giỏ hàng:', mergeError);
+        }
       }
 
-      // 2. Fetch lại giỏ hàng từ DB
       const response = await api.get('/cart'); 
-      
-      // SỬA LỖI 2.1: Trỏ đúng vào biến data (response.data của axios, và .data của API trả về)
       const dbCart = response.data.data || []; 
       
-      // SỬA LỖI 2.2: Map lại dữ liệu từ MySQL cho khớp với UI của React
       const formattedCart = dbCart.map(item => ({
-        productId: item.ProductID || item.productId, // Đề phòng case db trả về chữ hoa
+        productId: item.ProductID || item.productId,
         productName: item.ProductName || item.productName,
         price: item.Price || item.price,
         quantity: item.Quantity || item.quantity,
-        image: item.ImageURL || item.image // Lưu ý xem Backend ở dưới
+        image: item.ImageURL || item.image 
       }));
       
       setCart(formattedCart);
       
     } catch (error) {
-      console.error('Lỗi khi đồng bộ giỏ hàng:', error);
+      console.error('Lỗi khi tải giỏ hàng:', error);
     } finally {
       setIsSyncing(false);
     }
@@ -110,24 +108,18 @@ export default function CartProvider({ children }) {
       return updatedCart;
     });
 
-    // 2. Xử lý xóa dưới DB nếu đã đăng nhập
     if (user) {
       try {
-        // Hủy bỏ các lệnh updateQuantity (nếu có) đang đếm ngược của các sản phẩm sắp bị xóa
         idsToRemove.forEach(id => {
           if (debounceTimers.current[id]) {
             clearTimeout(debounceTimers.current[id]);
             delete debounceTimers.current[id];
           }
         });
-
-        // Xóa dưới DB. Dùng Promise.all để gọi đồng thời các API xóa cho nhanh
-        // (Nếu số lượng xóa cực lớn, nên viết thêm 1 API xóa hàng loạt ở Node.js như DELETE /cart/items/bulk)
         await Promise.all(
           idsToRemove.map(id => api.delete(`/cart/${id}`))
         );
 
-        toast.success(`Đã xóa ${idsToRemove.length} sản phẩm khỏi giỏ!`);
       } catch (error) {
         console.error("Lỗi xóa sản phẩm DB:", error);
         toast.error("Lỗi khi xóa sản phẩm. Dữ liệu có thể chưa đồng bộ.");
@@ -165,7 +157,7 @@ export default function CartProvider({ children }) {
         
         toast.success('Đã thêm vào giỏ hàng!');
       } catch (error) {
-        toast.error('Lỗi khi lưu vào hệ thống.');
+        toast.error(error.response.data.message);
       }
     } else {
       // (Nhánh guest giữ nguyên của bạn)

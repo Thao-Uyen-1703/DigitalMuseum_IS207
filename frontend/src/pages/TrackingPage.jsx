@@ -1,9 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { 
   Search, Package, Truck, CheckCircle, Clock, 
   Calendar, ShieldCheck, ArrowRight, Info,
-  Box,
-  NotebookPen
+  Box, NotebookPen, CheckSquare, XCircle, CreditCard
 } from 'lucide-react';
 import MainLayout from '../components/MainLayout';
 import { toast } from 'sonner';
@@ -17,6 +16,7 @@ export default function OrderTrackingPage() {
   const formatDate = (date) => {
     if (!date) return '---';
     return new Date(date).toLocaleString('vi-VN', { 
+      timeStyle: 'short',
       dateStyle: 'short', 
     });
   };
@@ -26,7 +26,7 @@ export default function OrderTrackingPage() {
         style: 'currency',
         currency: 'VND'
       }).format(amount);
-    };
+  };
 
   const handleSearchSubmit = async (e) => {
     try {
@@ -37,21 +37,22 @@ export default function OrderTrackingPage() {
       }
 
       setLoading(true);
+      setOrder(null);
 
       const response = await api.post(`/tracking`, { code: searchInput.trim() });
       const payload = response.data.data;
       setOrder(payload);
 
     } catch (error) {
-      toast.error('Mã đơn hàng không tồn tại');
+      toast.error(error.response?.data?.message || 'Mã đơn hàng không tồn tại hoặc có lỗi xảy ra');
     } finally {
       setLoading(false);
     }
   };
 
   const steps = [
-    { step: 1, label: 'Đã nhận đơn', icon: Clock, desc: 'Hệ thống đã ghi nhận' },
-    { step: 2, label: 'Đang xử lý', icon: Package, desc: 'Đang chuẩn bị kiện hàng' },
+    { step: 1, label: 'Chờ xử lý', icon: Clock, desc: 'Đơn hàng đã được ghi nhận' },
+    { step: 2, label: 'Đang chuẩn bị', icon: Package, desc: 'Đang đóng gói kiện hàng' },
     { step: 3, label: 'Vận chuyển', icon: Truck, desc: 'Đã giao cho đơn vị vận chuyển' },
     { step: 4, label: 'Hoàn thành', icon: CheckCircle, desc: 'Giao hàng thành công' },
   ];
@@ -100,20 +101,20 @@ export default function OrderTrackingPage() {
                 <div className="absolute inset-0 rounded-full border-4 border-slate-100"></div>
                 <div className="absolute inset-0 rounded-full border-4 border-t-[#b5995e] animate-spin"></div>
               </div>
-              <p className="text-slate-500 font-medium text-sm">Đang tải dữ liệu...</p>
+              <p className="text-slate-500 font-medium text-sm">Đang kết nối hệ thống dữ liệu...</p>
             </div>
           )}
 
+          {/* HIỂN THỊ KẾT QUẢ ĐƠN HÀNG */}
           {order && !loading && (
             <div className="space-y-6 max-w-3xl mx-auto animate-fadeIn">
-              
               <div className="bg-white p-6 md:p-8 rounded-3xl border border-slate-100 shadow-md">
                 
                 {/* 1. TIMELINE */}
                 <div className="hidden md:grid grid-cols-4 gap-4 relative pt-2 mb-12">
-                  <div className="absolute top-8 left-[12.5%] right-[12.5%] h-0.5 bg-slate-100 -z-0">
+                  <div className="absolute top-8 left-[12.5%] right-[12.5%] h-1 bg-slate-100 -z-0 rounded-full">
                     <div 
-                      className="h-full bg-gradient-to-r from-[#b5995e] to-[#c7af7b] transition-all duration-500" 
+                      className="h-full bg-gradient-to-r from-[#b5995e] to-[#c7af7b] transition-all duration-700 ease-in-out rounded-full" 
                       style={{ width: `${((order.step - 1) / 3) * 100}%` }}
                     ></div>
                   </div>
@@ -125,91 +126,93 @@ export default function OrderTrackingPage() {
 
                     return (
                       <div key={s.step} className="flex flex-col items-center text-center relative z-10">
-                        <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all duration-300 shadow-sm ${
+                        <div className={`w-14 h-14 rounded-full flex items-center justify-center border-4 transition-all duration-500 shadow-sm ${
                           isCompleted 
                             ? 'bg-amber-50 border-[#b5995e] text-[#b5995e]' 
-                            : 'bg-white border-slate-200 text-slate-300'
-                        } ${isCurrent ? 'ring-4 ring-[#b5995e]/15 font-bold scale-110 bg-white' : ''}`}>
-                          <Icon size={20} className={isCurrent ? 'animate-pulse' : ''} />
+                            : 'bg-white border-slate-100 text-slate-300'
+                        } ${isCurrent ? 'ring-4 ring-[#b5995e]/20 scale-110 bg-white' : ''}`}>
+                          <Icon size={22} className={isCurrent ? 'animate-pulse' : ''} />
                         </div>
-                        <h4 className={`text-sm font-bold mt-3 ${isCompleted ? 'text-slate-800' : 'text-slate-400'}`}>{s.label}</h4>
+                        <h4 className={`text-sm font-bold mt-4 ${isCompleted ? 'text-slate-800' : 'text-slate-400'}`}>{s.label}</h4>
+                        <p className="text-[10px] text-slate-400 mt-1 max-w-[120px]">{s.desc}</p>
                       </div>
                     );
                   })}
                 </div>
-
-                {/* 2. THÔNG TIN CHI TIẾT (4 FIELDS YÊU CẦU) */}
-                <h3 className="font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-4 mb-6 font-['Lora'] text-lg">
-                  <Info size={20} className="text-[#b5995e]" /> Thông tin chi tiết đơn hàng
-                </h3>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                    <span className="text-xs font-semibold text-slate-400 uppercase block mb-1 flex items-center gap-1.5">
+                  {/* LUÔN HIỂN THỊ MÃ ĐƠN HÀNG VÀ TRẠNG THÁI */}
+                  <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                    <span className="text-xs font-semibold text-slate-400 uppercase block mb-1.5 flex items-center gap-1.5">
                       <Box size={14} /> Mã đơn hàng
                     </span>
-                    <p className="font-bold text-[#b5995e] text-lg tracking-wide">{order.orderCode}</p>
+                    <p className="font-black text-[#b5995e] text-xl tracking-wide">{order.orderCode}</p>
                   </div>
 
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                    <span className="text-xs font-semibold text-slate-400 uppercase block mb-1 flex items-center gap-1.5">
-                      <NotebookPen size={14} /> Trạng thái
+                  <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                    <span className="text-xs font-semibold text-slate-400 uppercase block mb-1.5 flex items-center gap-1.5">
+                      <NotebookPen size={14} /> Trạng thái hiện tại
                     </span>
-                    <p className="font-bold text-[#b5995e]">{order.displayInfo.message}</p>
+                    <p className="font-bold text-slate-700 text-lg">{order.displayInfo.message}</p>
                   </div>
 
+                  {/* THÔNG TIN CHO STEP 1 (Pending) VÀ STEP 2 (Processing) */}
                   {order.step <= 2 && (
-                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                      <span className="text-xs font-semibold text-slate-400 uppercase block mb-1 flex items-center gap-1.5">
-                        <Calendar size={14} /> Ngày đặt hàng
-                      </span>
-                      <p className="font-semibold text-slate-700">{formatDate(order.displayInfo.date)}</p>
-                  </div>
-                  )}
-
-                  {order.step == 3 && (
                     <>
-                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                        <span className="text-xs font-semibold text-slate-400 uppercase block mb-1 flex items-center gap-1.5">
-                          <Truck size={14} /> Mã vận chuyển
+                      <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 md:col-span-2">
+                        <span className="text-xs font-semibold text-slate-400 uppercase block mb-1.5 flex items-center gap-1.5">
+                          <Calendar size={14} /> Thời gian hệ thống ghi nhận
                         </span>
-                        <p className="font-semibold text-emerald-600">{order.displayInfo.trackingNumber}</p>
-                      </div>
-
-                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                        <span className="text-xs font-semibold text-slate-400 uppercase block mb-1 flex items-center gap-1.5">
-                          <Clock size={14} /> Thời gian giao hàng
-                        </span>
-                        <p className="font-semibold text-emerald-600">{formatDate(order.displayInfo.date)}</p>
+                        <p className="font-semibold text-slate-700 text-base">{formatDate(order.displayInfo.date)}</p>
                       </div>
                     </>
                   )}
 
-                  {order.step == 4 && (
+                  {/* THÔNG TIN CHO STEP 3 (Delivering) */}
+                  {order.step === 3 && (
                     <>
-                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                        <span className="text-xs font-semibold text-slate-400 uppercase block mb-1 flex items-center gap-1.5">
-                          <Truck size={14} /> Thời gian nhận hàng
+                      <div className="bg-blue-50/50 p-5 rounded-2xl border border-blue-100">
+                        <span className="text-xs font-semibold text-blue-400 uppercase block mb-1.5 flex items-center gap-1.5">
+                          <Truck size={14} /> Mã vận chuyển
                         </span>
-                        <p className="font-semibold text-emerald-600">{formatDate(order.displayInfo.date)}</p>
+                        <p className="font-bold text-blue-700 text-base">{order.orderCode || 'Đang cập nhật...'}</p>
                       </div>
 
-                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                        <span className="text-xs font-semibold text-slate-400 uppercase block mb-1 flex items-center gap-1.5">
-                          <Clock size={14} /> Thanh toán
+                      <div className="bg-blue-50/50 p-5 rounded-2xl border border-blue-100">
+                        <span className="text-xs font-semibold text-blue-400 uppercase block mb-1.5 flex items-center gap-1.5">
+                          <Clock size={14} /> Thời gian bắt đầu giao
                         </span>
-                        {!order.displayInfo.PaidDate ? (
-                          <>
-                            <p className="font-semibold text-emerald-600">
-                              {formatMoney(order.displayInfo.amount)} - (Đã thanh toán)
-                            </p>
-                          </>
+                        <p className="font-semibold text-blue-700 text-base">{formatDate(order.displayInfo.date)}</p>
+                      </div>
+                    </>
+                  )}
+
+                  {/* THÔNG TIN CHO STEP 4 (Completed) */}
+                  {order.step === 4 && (
+                    <>
+                      <div className="bg-emerald-50/50 p-5 rounded-2xl border border-emerald-100">
+                        <span className="text-xs font-semibold text-emerald-500 uppercase block mb-1.5 flex items-center gap-1.5">
+                          <CheckSquare size={14} /> Thời gian nhận hàng
+                        </span>
+                        <p className="font-bold text-emerald-700 text-base">{formatDate(order.displayInfo.date)}</p>
+                      </div>
+
+                      <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                        <span className="text-xs font-semibold text-slate-400 uppercase block mb-1.5 flex items-center gap-1.5">
+                          <CreditCard size={14} /> Thanh toán
+                        </span>
+                        
+                        {/* ĐÃ SỬA LẠI LOGIC THANH TOÁN (Có PaidDate = Đã thanh toán) */}
+                        {!!order.displayInfo.PaidDate ? (
+                          <p className="font-bold text-emerald-600 flex items-center gap-1.5 text-base">
+                            <CheckCircle size={16}/> 
+                            {formatMoney(order.displayInfo.amount)} <span className="text-sm font-medium text-slate-500">- Đã thanh toán</span>
+                          </p>
                         ) : (
-                          <>
-                            <p className="font-semibold text-red-600">
-                              {formatMoney(order.displayInfo.amount)} - (Chưa thanh toán)
-                            </p>
-                          </>
+                          <p className="font-bold text-red-500 flex items-center gap-1.5 text-base">
+                            <Clock size={16}/> 
+                            {formatMoney(order.displayInfo.amount)} <span className="text-sm font-medium text-slate-500">- Thu tiền hộ (COD)</span>
+                          </p>
                         )}
                       </div>
                     </>
@@ -219,15 +222,15 @@ export default function OrderTrackingPage() {
             </div>
           )}
 
-          {/* TRƯỜNG HỢP CHỜ BAN ĐẦU */}
+          {/* TRƯỜNG HỢP CHỜ BAN ĐẦU (KHI CHƯA CÓ DỮ LIỆU) */}
           {!order && !loading && (
-            <div className="text-center bg-white p-12 rounded-3xl border border-slate-100 shadow-sm max-w-xl mx-auto transition-all animate-fadeIn">
-              <div className="w-16 h-16 bg-slate-50 border border-slate-100 text-slate-300 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <div className="text-center bg-white p-12 rounded-3xl border border-slate-100 shadow-sm max-w-xl mx-auto transition-all animate-fadeIn mt-6">
+              <div className="w-16 h-16 bg-slate-50 border border-slate-100 text-slate-300 rounded-2xl flex items-center justify-center mx-auto mb-5">
                 <Package size={28} className="animate-bounce duration-1000" />
               </div>
-              <h3 className="font-bold text-slate-700 text-base mb-1 font-['Lora']">Hệ thống sẵn sàng tra cứu</h3>
-              <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
-                Vui lòng điền mã đơn hàng để xem thời gian dự kiến và trạng thái cập nhật mới nhất.
+              <h3 className="font-bold text-slate-700 text-lg mb-2 font-['Lora']">Hệ thống sẵn sàng tra cứu</h3>
+              <p className="text-sm text-slate-400 max-w-xs mx-auto leading-relaxed">
+                Vui lòng điền mã đơn hàng vào ô trống để xem trạng thái cập nhật mới nhất.
               </p>
             </div>
           )}

@@ -1,5 +1,6 @@
 const paymentModel = require('../../models/paymentModel');
 const orderModel = require('../../models/orderModel');
+const orderSyncService = require('./orderSyncService');
 
 const paymentServices = {
     createPayment: async(payment) => {
@@ -15,21 +16,21 @@ const paymentServices = {
             Amount: order.TotalAmount
         }
 
-        const results = await paymentModel.createPayment(payload);
+        const paymentId = await paymentModel.createPayment(payload);
 
-        return results;
+        return { PaymentID: paymentId, ...payload };
     },
 
     updatePayment: async(id, payment) => {
-        const order = orderModel.getOrderByIdAdmin(payment.OrderID);
-        const existPayment = paymentModel.getPaymentByID(id);
+        const order = await orderModel.getOrderByIdAdmin(payment.OrderID);
+        const existPayment = await paymentModel.getPaymentByID(id);
 
         if(!order) {
             throw { status: 400, message: "Đơn hàng không tồn tại" }
         }
 
         if(!existPayment) {
-            throw { status: 400, message: "Đơn hàng không tồn tại" }
+            throw { status: 400, message: "Thanh toán không tồn tại" }
         }
 
         const payload = {
@@ -41,7 +42,16 @@ const paymentServices = {
 
         const results = await paymentModel.updatePayment(payload);
 
-        return results;
+        // Sync order status after payment update
+        let syncResult = null;
+        try {
+            syncResult = await orderSyncService.syncOrderAfterPaymentUpdate(payment.OrderID, payment.Status);
+        } catch (err) {
+            // log but don't block
+            console.error('Order sync after payment failed:', err);
+        }
+
+        return { updated: results > 0, payment: payload, orderSync: syncResult };
     }
 };
 

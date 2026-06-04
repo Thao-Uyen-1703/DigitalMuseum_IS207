@@ -78,7 +78,6 @@ export default function ProfilePage() {
       const response = await api.get(`/order/${orderId}`);
       setOrderDetails(response.data.data || response.data);
       setIsOrderDetailsModalOpen(true);
-      console.log(response.data.data);
     } catch (error) {
       toast.error("Không thể tải chi tiết đơn hàng.");
     } finally {
@@ -203,12 +202,52 @@ export default function ProfilePage() {
   
   const getStatusBadge = (status) => {
     switch (status) {
-      case 'Pending': return <span className="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200/80 rounded-full text-xs font-bold flex items-center gap-1"><Clock size={12} /> Đang xử lý</span>;
-      case 'Shipped': return <span className="px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200/80 rounded-full text-xs font-bold flex items-center gap-1"><Truck size={12} /> Đang giao</span>;
-      case 'Delivered': return <span className="px-2.5 py-1 bg-green-50 text-green-700 border border-green-200/80 rounded-full text-xs font-bold flex items-center gap-1"><CheckCircle size={12} /> Hoàn thành</span>;
-      default: return <span className="px-2.5 py-1 bg-slate-50 text-slate-600 border border-slate-200 rounded-full text-xs font-bold">{status}</span>;
+      case 'Pending':
+        return (
+          <span className="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200/80 rounded-full text-xs font-bold flex items-center gap-1">
+            <Clock size={12} />
+            Chờ xác nhận
+          </span>
+        );
+
+      case 'Processing':
+        return (
+          <span className="px-2.5 py-1 bg-orange-50 text-orange-700 border border-orange-200/80 rounded-full text-xs font-bold flex items-center gap-1">
+            <Package size={12} />
+            Đang xử lý
+          </span>
+        );
+
+      case 'Delivering':
+        return (
+          <span className="px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200/80 rounded-full text-xs font-bold flex items-center gap-1">
+            <Truck size={12} />
+            Đang giao hàng
+          </span>
+        );
+
+      case 'Completed':
+        return (
+          <span className="px-2.5 py-1 bg-green-50 text-green-700 border border-green-200/80 rounded-full text-xs font-bold flex items-center gap-1">
+            <CheckCircle size={12} />
+            Hoàn thành
+          </span>
+        );
+
+      default:
+        return (
+          <span className="px-2.5 py-1 bg-slate-50 text-slate-600 border border-slate-200 rounded-full text-xs font-bold">
+            {status}
+          </span>
+        );
     }
   };
+
+  const renderAddress = (ShippingInfo) => {
+    if (!ShippingInfo) return <div className="text-xs text-gray-400 mt-1">-</div>;
+    const { addressDetail, district, province } = ShippingInfo;
+    return `${addressDetail}, ${district}, ${province}`;
+  }
 
   return (
     <MainLayout>
@@ -463,7 +502,7 @@ export default function ProfilePage() {
               {isOrderDetailsModalOpen && orderDetails && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
                   <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[80vh] overflow-y-auto shadow-2xl animate-scaleUp border border-slate-100">
-                    <div className="p-5 border-b border-slate-100 flex justify-between items-center sticky top-0 bg-white">
+                    <div className="p-5 border-b border-slate-100 flex justify-between items-center sticky top-0 bg-white z-10">
                       <h3 className="font-bold text-base text-slate-800">Chi tiết đơn hàng <span className="font-mono font-bold text-sm text-[#b5995e]">#{orderDetails.OrderTracking}</span></h3>
                       <button onClick={() => setIsOrderDetailsModalOpen(false)}><X size={20} /></button>
                     </div>
@@ -473,15 +512,15 @@ export default function ProfilePage() {
                       <div className="grid grid-cols-2 gap-4 text-sm border-t pt-4 border-gray-300">
                         <div>
                           <p className="text-slate-400 font-bold uppercase text-[10px]">Người nhận</p>
-                          <p className="font-medium text-slate-700">{orderDetails.orderInfo.Name}</p>
+                          <p className="font-medium text-slate-700">{orderDetails.orderInfo.fullName}</p>
                         </div>
                         <div>
                           <p className="text-slate-400 font-bold uppercase text-[10px]">Số điện thoại</p>
-                          <p className="font-medium text-slate-700">{orderDetails.orderInfo.Phone}</p>
+                          <p className="font-medium text-slate-700">{orderDetails.orderInfo.phone}</p>
                         </div>
                         <div className="col-span-2">
                           <p className="text-slate-400 font-bold uppercase text-[10px]">Địa chỉ giao hàng</p>
-                          <p className="font-medium text-slate-700">{orderDetails.orderInfo.Address}</p>
+                          <p className="font-medium text-slate-700">{renderAddress(orderDetails.orderInfo.shippingAddress)}</p>
                         </div>
                       </div>
 
@@ -501,8 +540,18 @@ export default function ProfilePage() {
                         </div>
                       </div>
                       
-                      <div className="border-t pt-4 border-gray-300 flex justify-between items-center">
-                        <span className="font-bold text-slate-800">Tổng cộng:</span>
+                      {/* CẬP NHẬT: PHẦN HIỂN THỊ PHÍ VẬN CHUYỂN */}
+                      <div className="border-t pt-3 mt-3 border-gray-100 flex justify-between items-center">
+                        <span className="text-sm text-slate-600">
+                          Phí giao hàng {orderDetails.Shipment?.MethodName ? `(${orderDetails.Shipment.MethodName})` : ''}
+                        </span>
+                        <span className="text-sm font-bold text-slate-800">
+                          {orderDetails.Shipment?.Price > 0 ? formatPrice(orderDetails.Shipment.Price) : 'Miễn phí'}
+                        </span>
+                      </div>
+
+                      <div className="border-t pt-4 mt-3 border-gray-300 flex justify-between items-center">
+                        <span className="font-bold text-slate-800">Tổng thanh toán:</span>
                         <span className="text-lg font-black text-[#b5995e]">{formatPrice(orderDetails.TotalAmount)}</span>
                       </div>
                     </div>

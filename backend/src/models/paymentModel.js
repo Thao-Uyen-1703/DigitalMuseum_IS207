@@ -7,6 +7,18 @@ const paymentModel = {
         return results[0];
     },
 
+    getPaymentByOrderID: async(orderId) => {
+        const query = `
+            SELECT PaymentID, Status, PaidDate, Amount, PaymentMethod
+            FROM payments
+            WHERE OrderID = ?
+            ORDER BY PaymentID DESC
+            LIMIT 1
+        `;
+        const [results] = await db.query(query, [orderId]);
+        return results[0] || null;
+    },
+
     createPayment: async (payment) => {
         const query = `
             INSERT INTO payments(OrderID, PaymentMethod, Amount)

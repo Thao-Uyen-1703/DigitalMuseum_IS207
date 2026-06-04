@@ -228,9 +228,9 @@ const updateUrlParams = (newFilters, page, search) => {
               ) : (
                 <>
                   {/* Products Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
                     {products.map((product) => (
-                      <ProductCard key={product.ProductID} product={product} />
+                      <ProductCard key={product.ProductID} product={product} locationList={locationList}/>
                     ))}
                   </div>
 

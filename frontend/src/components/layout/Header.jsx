@@ -13,36 +13,70 @@ export default function Header() {
   const navigate = useNavigate()
   const [isOpen, setIsOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [isCartOpen, setIsCartOpen] = useState(false); // State cho mini-cart
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const { user, logout } = useAuth();
-  const { cart } = useCart(); // Lấy giỏ hàng từ Context
+  const { cart } = useCart();
 
-  // Tính tổng số lượng item để hiển thị trên icon (bubble)
   const cartItemsCount = cart.reduce((total, item) => total + item.quantity, 0);
 
   const userMenuRef = useRef(null);
-  const cartRef = useRef(null); // Ref để xử lý click outside cho giỏ hàng
+  const cartRef = useRef(null);
+  const searchRef = useRef(null);
+  const suggestionsRef = useRef(null);
 
   const linkClass = 'relative text-gray-700 text-sm font-semibold py-2 transition-colors duration-300 hover:text-amber-600 group';
   const dropdownItemClass = 'flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-600 transition-colors cursor-pointer';
 
-  // Hàm format tiền tệ
   const formatPrice = (value) =>
     new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND',
     }).format(Number(value || 0));
 
+  // Debounced search for suggestions
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (searchQuery.trim().length > 0) {
+        setIsLoadingSuggestions(true);
+        try {
+          const response = await api.get('/product/suggestions', {
+            params: { q: searchQuery }
+          });
+          if (response.data.success) {
+            setSuggestions(response.data.data);
+            setShowSuggestions(true);
+          }
+        } catch (err) {
+          console.error('Error fetching suggestions:', err);
+          setSuggestions([]);
+        } finally {
+          setIsLoadingSuggestions(false);
+        }
+      } else {
+        setSuggestions([]);
+        setShowSuggestions(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   useEffect(() => {
     function handleClickOutside(event) {
-      // Đóng User Menu nếu click ra ngoài
       if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
         setIsUserMenuOpen(false);
       }
-      // Đóng Cart Menu nếu click ra ngoài
       if (cartRef.current && !cartRef.current.contains(event.target)) {
         setIsCartOpen(false);
+      }
+      if (searchRef.current && !searchRef.current.contains(event.target) && 
+          suggestionsRef.current && !suggestionsRef.current.contains(event.target)) {
+        setShowSuggestions(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -52,13 +86,24 @@ export default function Header() {
   const handleLogout = async () => {
     try {
       await api.post('/auth/logout');
-
       await logout();
-
       navigate('/');
-
     } catch (err) {
       toast.error(err.message || "Có lỗi xảy ra khi đăng xuất");
+    }
+  }
+
+  const handleSuggestionClick = (product) => {
+    navigate(`/san-pham/${product.SlugName}`);
+    setSearchQuery('');
+    setShowSuggestions(false);
+  }
+
+  const handleSearchSubmit = () => {
+    if (searchQuery.trim()) {
+      navigate(`/cua-hang?search=${encodeURIComponent(searchQuery)}`);
+      setSearchQuery('');
+      setShowSuggestions(false);
     }
   }
 
@@ -75,7 +120,7 @@ export default function Header() {
         <nav className="hidden md:flex flex-1 mx-8 lg:mx-12">
           <ul className="flex gap-6 lg:gap-8 list-none m-0 p-0">
             <li><Link to="/" className={linkClass}>Trang chủ<span className="absolute bottom-0 left-0 w-full h-0.5 bg-amber-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span></Link></li>
-            <li><Link to="#" className={linkClass}>Bảo tàng số<span className="absolute bottom-0 left-0 w-full h-0.5 bg-amber-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span></Link></li>
+            {/* <li><Link to="#" className={linkClass}>Bảo tàng số<span className="absolute bottom-0 left-0 w-full h-0.5 bg-amber-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span></Link></li> */}
             <li><Link to="/cua-hang" className={linkClass}>Cửa hàng<span className="absolute bottom-0 left-0 w-full h-0.5 bg-amber-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span></Link></li>
             <li><Link to="/tra-cuu" className={linkClass}>Tra cứu<span className="absolute bottom-0 left-0 w-full h-0.5 bg-amber-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span></Link></li>
           </ul>
@@ -83,13 +128,78 @@ export default function Header() {
 
         <div className="flex items-center gap-2 sm:gap-4">
           
-          <div className="hidden lg:flex relative items-center">
-            <input
-              type="text"
-              placeholder="Tìm kiếm..."
-              className="pl-10 pr-4 py-2 rounded-full border border-gray-200 bg-gray-50 text-gray-700 text-sm outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 w-32 focus:w-64 transition-all duration-500 ease-in-out"
-            />
-            <Search className="absolute left-3 text-amber-500" size={18} />
+          <div className="hidden lg:block relative" ref={searchRef}>
+            <div className="flex items-center">
+              <input
+                type="text"
+                placeholder="Tìm kiếm..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit()}
+                onFocus={() => searchQuery.trim().length > 0 && setShowSuggestions(true)}
+                className="pl-10 pr-4 py-2 rounded-full border border-gray-200 bg-gray-50 text-gray-700 text-sm outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 w-32 focus:w-64 transition-all duration-500 ease-in-out"
+              />
+              <button
+                onClick={handleSearchSubmit}
+                className="absolute left-3 text-amber-500 cursor-pointer hover:text-amber-600"
+              >
+                <Search size={18} />
+              </button>
+            </div>
+
+            {/* Suggestions Dropdown */}
+            {showSuggestions && (
+              <div 
+                ref={suggestionsRef}
+                className="absolute left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto"
+              >
+                {isLoadingSuggestions ? (
+                  <div className="px-4 py-3 text-center text-sm text-gray-500">
+                    Đang tìm kiếm...
+                  </div>
+                ) : suggestions.length > 0 ? (
+                  <ul className="list-none m-0 p-0">
+                    {suggestions.map((product) => (
+                      <li 
+                        key={product.ProductID}
+                        onClick={() => handleSuggestionClick(product)}
+                        className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 hover:bg-amber-50 cursor-pointer transition"
+                      >
+                        <ImageDisplay
+                          src={product.ImageURL}
+                          className="w-10 h-10 rounded object-cover border border-gray-200 shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <h5 className="text-sm font-medium text-gray-800 truncate m-0">
+                            {product.ProductName}
+                          </h5>
+                          <div className="flex justify-between items-center mt-1">
+                            <span className="text-xs text-amber-600 font-bold">{formatPrice(product.Price)}</span>
+                            {product.Stock <= 0 ? (
+                              <span className="text-xs text-red-500 font-semibold">Hết hàng</span>
+                            ) : (
+                              <span className="text-xs text-gray-500">Còn {product.Stock}</span>
+                            )}
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="px-4 py-3 text-center text-sm text-gray-500">
+                    Không tìm thấy sản phẩm
+                  </div>
+                )}
+                {suggestions.length > 0 && (
+                  <button
+                    onClick={handleSearchSubmit}
+                    className="w-full px-4 py-2 text-center text-sm font-medium text-amber-600 hover:bg-amber-50 border-t border-gray-100 transition"
+                  >
+                    Xem tất cả kết quả
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* ========================================== */}

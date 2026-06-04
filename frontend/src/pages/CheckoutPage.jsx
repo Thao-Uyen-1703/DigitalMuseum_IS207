@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { 
   ArrowLeft, MapPin, Truck, CreditCard, 
-  User, FileText
+  User, FileText, Loader2, AlertCircle
 } from 'lucide-react';
 import MainLayout from '../components/MainLayout';
 import { useCart } from '../context/CartContext';
@@ -23,15 +23,14 @@ export default function CheckoutPage() {
   const [methods, setMethods] = useState([]);
   const [selectedShipping, setSelectedShipping] = useState(null);
 
-  // --- STATE MỚI CHO API ĐỊA CHỈ ---
-  const [locations, setLocations] = useState([]); // Chứa toàn bộ Tỉnh & Quận
+  // --- STATE CHO API ĐỊA CHỈ ---
+  const [locations, setLocations] = useState([]); 
   const [selectedProvinceCode, setSelectedProvinceCode] = useState('');
   const [selectedDistrictCode, setSelectedDistrictCode] = useState('');
 
-  // 2. STATE FORM NHẬP LIỆU 
+  // 2. STATE FORM NHẬP LIỆU VÀ LỖI
   const [formData, setFormData] = useState({
     fullName: '',
-    email: '',
     phone: '',
     province: '',      
     district: '',      
@@ -39,6 +38,8 @@ export default function CheckoutPage() {
     orderNote: '',     
     paymentMethod: 'COD' 
   });
+  
+  const [errors, setErrors] = useState({});
 
   const formatPrice = (value) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value || 0);
 
@@ -65,19 +66,16 @@ export default function CheckoutPage() {
           setSelectedShipping(data[0]);
         }
       } catch (error) {
-        console.error("Lỗi fetch phương thức vận chuyển:", error);
         toast.error("Không thể tải phương thức vận chuyển.");
       }
     };
 
-    // Gọi API Tỉnh thành phố (depth=2: lấy cả Thành phố và Quận/huyện)
     const fetchLocations = async () => {
       try {
         const response = await fetch('https://provinces.open-api.vn/api/?depth=2');
         const data = await response.json();
         setLocations(data);
       } catch (error) {
-        console.error("Lỗi fetch địa điểm:", error);
         toast.error("Không thể tải danh sách Tỉnh/Thành phố.");
       }
     };
@@ -86,9 +84,47 @@ export default function CheckoutPage() {
     fetchLocations();
   }, [location, navigate]);
 
+  // HÀM KIỂM TRA LỖI FORM
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = 'Vui lòng nhập họ và tên người nhận.';
+    }
+    
+    if (!formData.phone.trim()) {
+      newErrors.phone = 'Vui lòng nhập số điện thoại.';
+    } else if (!/^(0|\+84)[3|5|7|8|9][0-9]{8}$/.test(formData.phone)) {
+      newErrors.phone = 'Số điện thoại không hợp lệ (gồm 10 số, bắt đầu bằng 0).';
+    }
+
+    if (!selectedProvinceCode) {
+      newErrors.province = 'Vui lòng chọn Tỉnh / Thành phố.';
+    }
+
+    if (!selectedDistrictCode) {
+      newErrors.district = 'Vui lòng chọn Quận / Huyện.';
+    }
+
+    if (!formData.addressDetail.trim()) {
+      newErrors.addressDetail = 'Vui lòng nhập địa chỉ cụ thể.';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   // XỬ LÝ ĐẶT HÀNG
   const handlePlaceOrder = async (e) => {
     e.preventDefault();
+
+    if (!validateForm()) {
+      toast.error('Vui lòng kiểm tra lại thông tin giao hàng.');
+      // Cuộn lên phần có lỗi đầu tiên (tùy chọn)
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -114,12 +150,10 @@ export default function CheckoutPage() {
       };
 
       const response = await api.post('/checkout', payload);
-
       const orderData = response.data?.data || response.data;
-
       const purchasedIds = checkoutItems.map(item => item.productId);
+      
       removeFromCart(purchasedIds);
-
       toast.success('Đặt hàng thành công!');
 
       navigate('/dat-hang-thanh-cong', { 
@@ -132,28 +166,34 @@ export default function CheckoutPage() {
       });
 
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Đặt hàng thất bại. Vui lòng thử lại.');
+      toast.error(error.response?.data?.message || 'Đặt hàng thất bại. Vui lòng thử lại sau.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+    // Xóa lỗi của field đó khi người dùng bắt đầu gõ
+    if (errors[name]) {
+      setErrors({ ...errors, [name]: null });
+    }
+  };
 
-  // XỬ LÝ KHI CHỌN TỈNH/THÀNH PHỐ
   const handleProvinceChange = (e) => {
     const code = e.target.value;
     const name = e.target.options[e.target.selectedIndex].text;
     setSelectedProvinceCode(code);
-    setSelectedDistrictCode(''); // Reset quận/huyện khi đổi tỉnh
+    setSelectedDistrictCode(''); 
     setFormData({ 
       ...formData, 
       province: code ? name : '', 
-      district: '' // Xóa dữ liệu quận/huyện cũ trong formData
+      district: '' 
     });
+    if (errors.province) setErrors({ ...errors, province: null });
   };
 
-  // XỬ LÝ KHI CHỌN QUẬN/HUYỆN
   const handleDistrictChange = (e) => {
     const code = e.target.value;
     const name = e.target.options[e.target.selectedIndex].text;
@@ -162,13 +202,12 @@ export default function CheckoutPage() {
       ...formData, 
       district: code ? name : '' 
     });
+    if (errors.district) setErrors({ ...errors, district: null });
   };
 
   if (checkoutItems.length === 0) return null; 
 
   const finalTotal = displayTotal + (selectedShipping ? Number(selectedShipping.Price || 0) : 0);
-
-  // Lọc ra danh sách Quận/Huyện dựa trên Tỉnh/Thành phố đang chọn
   const currentProvince = locations.find(p => p.code.toString() === selectedProvinceCode);
   const availableDistricts = currentProvince ? currentProvince.districts : [];
 
@@ -181,11 +220,12 @@ export default function CheckoutPage() {
             <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Quay lại giỏ hàng
           </Link>
 
-          <form onSubmit={handlePlaceOrder} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <form onSubmit={handlePlaceOrder} noValidate className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             
             {/* CỘT TRÁI */}
             <div className="lg:col-span-7 space-y-6">
               
+              {/* THÔNG TIN CÁ NHÂN */}
               <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-100 shadow-sm transition-all hover:shadow-md">
                 <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
                   <div className="p-2 bg-amber-50 rounded-lg text-[#b5995e]"><User size={20} /></div>
@@ -196,17 +236,33 @@ export default function CheckoutPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Họ và tên người nhận <span className="text-red-500">*</span></label>
-                      <input required type="text" name="fullName" value={formData.fullName} onChange={handleChange} className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#b5995e]/20 focus:border-[#b5995e] transition-all text-sm" placeholder="Ví dụ: Nguyễn Văn A"/>
+                      <input 
+                        type="text" 
+                        name="fullName" 
+                        value={formData.fullName} 
+                        onChange={handleChange} 
+                        className={`w-full px-4 py-3 bg-slate-50/50 border rounded-xl focus:outline-none focus:ring-2 transition-all text-sm ${errors.fullName ? 'border-red-400 focus:ring-red-100 focus:border-red-500' : 'border-slate-200 focus:ring-[#b5995e]/20 focus:border-[#b5995e]'}`} 
+                        placeholder="Ví dụ: Nguyễn Văn A"
+                      />
+                      {errors.fullName && <p className="mt-1.5 text-xs text-red-500 font-medium flex items-center gap-1 animate-in fade-in"><AlertCircle size={12}/> {errors.fullName}</p>}
                     </div>
                     <div>
                       <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Số điện thoại <span className="text-red-500">*</span></label>
-                      <input required type="tel" name="phone" value={formData.phone} onChange={handleChange} className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#b5995e]/20 focus:border-[#b5995e] transition-all text-sm" placeholder="09xxxxxxxx"/>
+                      <input 
+                        type="tel" 
+                        name="phone" 
+                        value={formData.phone} 
+                        onChange={handleChange} 
+                        className={`w-full px-4 py-3 bg-slate-50/50 border rounded-xl focus:outline-none focus:ring-2 transition-all text-sm ${errors.phone ? 'border-red-400 focus:ring-red-100 focus:border-red-500' : 'border-slate-200 focus:ring-[#b5995e]/20 focus:border-[#b5995e]'}`} 
+                        placeholder="09xxxxxxxx"
+                      />
+                      {errors.phone && <p className="mt-1.5 text-xs text-red-500 font-medium flex items-center gap-1 animate-in fade-in"><AlertCircle size={12}/> {errors.phone}</p>}
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* BẢN SỬA: ĐỊA CHỈ GIAO HÀNG */}
+              {/* ĐỊA CHỈ GIAO HÀNG */}
               <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-100 shadow-sm transition-all hover:shadow-md">
                 <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
                   <div className="p-2 bg-amber-50 rounded-lg text-[#b5995e]"><MapPin size={20} /></div>
@@ -215,14 +271,12 @@ export default function CheckoutPage() {
 
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Select Tỉnh / Thành phố */}
                     <div>
                       <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Tỉnh / Thành phố <span className="text-red-500">*</span></label>
                       <select 
-                        required 
                         value={selectedProvinceCode} 
                         onChange={handleProvinceChange} 
-                        className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#b5995e]/20 focus:border-[#b5995e] transition-all text-sm cursor-pointer"
+                        className={`w-full px-4 py-3 bg-slate-50/50 border rounded-xl focus:outline-none focus:ring-2 transition-all text-sm cursor-pointer ${errors.province ? 'border-red-400 focus:ring-red-100 focus:border-red-500' : 'border-slate-200 focus:ring-[#b5995e]/20 focus:border-[#b5995e]'}`}
                       >
                         <option value="">-- Chọn Tỉnh / Thành phố --</option>
                         {locations.map(province => (
@@ -231,17 +285,16 @@ export default function CheckoutPage() {
                           </option>
                         ))}
                       </select>
+                      {errors.province && <p className="mt-1.5 text-xs text-red-500 font-medium flex items-center gap-1 animate-in fade-in"><AlertCircle size={12}/> {errors.province}</p>}
                     </div>
 
-                    {/* Select Quận / Huyện */}
                     <div>
                       <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Quận / Huyện <span className="text-red-500">*</span></label>
                       <select 
-                        required 
                         value={selectedDistrictCode} 
                         onChange={handleDistrictChange} 
                         disabled={!selectedProvinceCode}
-                        className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#b5995e]/20 focus:border-[#b5995e] transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-slate-100 cursor-pointer"
+                        className={`w-full px-4 py-3 bg-slate-50/50 border rounded-xl focus:outline-none focus:ring-2 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-slate-100 cursor-pointer ${errors.district ? 'border-red-400 focus:ring-red-100 focus:border-red-500' : 'border-slate-200 focus:ring-[#b5995e]/20 focus:border-[#b5995e]'}`}
                       >
                         <option value="">-- Chọn Quận / Huyện --</option>
                         {availableDistricts.map(district => (
@@ -250,12 +303,21 @@ export default function CheckoutPage() {
                           </option>
                         ))}
                       </select>
+                      {errors.district && <p className="mt-1.5 text-xs text-red-500 font-medium flex items-center gap-1 animate-in fade-in"><AlertCircle size={12}/> {errors.district}</p>}
                     </div>
                   </div>
 
                   <div>
                     <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Địa chỉ cụ thể <span className="text-red-500">*</span></label>
-                    <input required type="text" name="addressDetail" value={formData.addressDetail} onChange={handleChange} className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#b5995e]/20 focus:border-[#b5995e] transition-all text-sm" placeholder="Số nhà, ngõ ngách, tên đường..."/>
+                    <input 
+                      type="text" 
+                      name="addressDetail" 
+                      value={formData.addressDetail} 
+                      onChange={handleChange} 
+                      className={`w-full px-4 py-3 bg-slate-50/50 border rounded-xl focus:outline-none focus:ring-2 transition-all text-sm ${errors.addressDetail ? 'border-red-400 focus:ring-red-100 focus:border-red-500' : 'border-slate-200 focus:ring-[#b5995e]/20 focus:border-[#b5995e]'}`} 
+                      placeholder="Số nhà, ngõ ngách, tên đường..."
+                    />
+                    {errors.addressDetail && <p className="mt-1.5 text-xs text-red-500 font-medium flex items-center gap-1 animate-in fade-in"><AlertCircle size={12}/> {errors.addressDetail}</p>}
                   </div>
 
                   <div>
@@ -267,6 +329,7 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
+              {/* PHƯƠNG THỨC THANH TOÁN */}
               <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-100 shadow-sm transition-all hover:shadow-md">
                 <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
                   <div className="p-2 bg-amber-50 rounded-lg text-[#b5995e]"><CreditCard size={20} /></div>
@@ -286,7 +349,7 @@ export default function CheckoutPage() {
                     <input type="radio" name="paymentMethod" value="VNPAY" disabled checked={formData.paymentMethod === 'VNPAY'} onChange={handleChange} className="text-[#b5995e] focus:ring-[#b5995e] mt-1"/>
                     <div className="ml-3">
                       <span className="block font-semibold text-slate-800 text-sm">Thanh toán trực tuyến VNPAY</span>
-                      <span className="block text-xs text-slate-400 mt-0.5">Hỗ trợ quét mã QR, thẻ ATM</span>
+                      <span className="block text-xs text-slate-400 mt-0.5">Hỗ trợ quét mã QR, thẻ ATM (Đang bảo trì)</span>
                     </div>
                   </label>
                 </div>
@@ -294,7 +357,7 @@ export default function CheckoutPage() {
 
             </div>
 
-            {/* CỘT PHẢI */}
+            {/* CỘT PHẢI - HÓA ĐƠN */}
             <div className="lg:col-span-5 bg-white p-6 md:p-8 rounded-2xl border border-slate-100 shadow-sm sticky top-24 space-y-6">
               <h2 className="text-xl font-bold text-slate-800 border-b border-slate-100 pb-4 m-0 font-['Lora']">Hóa đơn hàng</h2>
               
@@ -306,7 +369,7 @@ export default function CheckoutPage() {
                         <ImageDisplay src={item.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"/>
                       </div>
                       <div className="min-w-0">
-                        <h4 className="text-sm font-semibold text-slate-700 truncate mb-0.5">{item.productName}</h4>
+                        <h4 className="text-sm font-semibold text-slate-700 truncate mb-0.5" title={item.productName}>{item.productName}</h4>
                         <p className="text-xs text-slate-400 font-medium">Số lượng: {item.quantity}</p>
                       </div>
                     </div>
@@ -315,7 +378,7 @@ export default function CheckoutPage() {
                 ))}
               </div>
 
-              <div className="space-y-3 pt-2 border-t border-dashed border-slate-200">
+              <div className="space-y-3 pt-4 border-t border-dashed border-slate-200">
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500">
                   Hình thức vận chuyển *
                 </label>
@@ -368,9 +431,16 @@ export default function CheckoutPage() {
               <button 
                 type="submit" 
                 disabled={isSubmitting}
-                className="w-full bg-[#b5995e] hover:brightness-105 active:scale-[0.99] text-white font-bold py-4 rounded-xl shadow-lg shadow-[#b5995e]/10 transition-all text-base tracking-wide disabled:bg-slate-300 disabled:shadow-none disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center gap-2 bg-[#b5995e] hover:brightness-105 active:scale-[0.99] text-white font-bold py-4 rounded-xl shadow-lg shadow-[#b5995e]/20 transition-all text-base tracking-wide disabled:bg-slate-300 disabled:shadow-none disabled:cursor-not-allowed"
               >
-                {isSubmitting ? 'ĐANG KHỞI TẠO ĐƠN HÀNG...' : `XÁC NHẬN ĐẶT MUA`}
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="animate-spin" size={20} /> 
+                    <span>ĐANG XỬ LÝ...</span>
+                  </>
+                ) : (
+                  'XÁC NHẬN ĐẶT MUA'
+                )}
               </button>
             </div>
 

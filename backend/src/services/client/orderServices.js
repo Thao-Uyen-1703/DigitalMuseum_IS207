@@ -19,7 +19,7 @@ const orderServices = {
         }
 
         const [address, products, coupon, payment, shipment] = await Promise.all([
-            orderModel.getOrderAddress(order.AddressID),
+            orderModel.getOrderAddress(order.OrderID),
             orderModel.getOrderDetails(order.OrderID),
             order.CouponID ? orderModel.getOrderCoupon(order.CouponID) : Promise.resolve(null),
             orderModel.getOrderPayment(order.OrderID),
@@ -32,11 +32,7 @@ const orderServices = {
             TotalAmount: order.TotalAmount,
             OrderDate: order.OrderDate,
             Note: order.Note,
-            orderInfo: {
-                Name: address.ReceiverName,
-                Phone: address.Phone,
-                Address: `${address.AddressLine}, ${address.District}, ${address.City}`
-            },
+            orderInfo: JSON.parse(address.ShippingInfo),
             items: products.map(item => ({
                 Name: item.ProductName,
                 Quantity: item.Quantity,

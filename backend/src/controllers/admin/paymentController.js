@@ -9,10 +9,11 @@ const paymentController = {
                 throw { status: 400, message: "Vui lòng nhập đủ thông tin" }
             }
 
-            await paymentServices.createPayment(data);
+            const result = await paymentServices.createPayment(data);
 
             return res.status(201).json({
                 success: true,
+                data: result,
                 message: "Tạo thanh toán thành công"
             })
         } catch (err) {
@@ -31,11 +32,14 @@ const paymentController = {
                 throw { status: 400, message: "Vui lòng nhập đủ thông tin" }
             }
 
-            await paymentServices.updatePayment(id, data);
+            const result = await paymentServices.updatePayment(id, data);
 
             return res.status(200).json({
                 success: true,
-                message: "Cập nhật thành công"
+                data: result,
+                message: result.orderSync?.synced
+                    ? `Cập nhật thanh toán thành công. Đơn hàng: ${result.orderSync.oldStatus} → ${result.orderSync.newStatus}`
+                    : "Cập nhật thành công"
             })
         } catch (err) {
             const statusCode = err.status || 500;

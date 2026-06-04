@@ -35,7 +35,6 @@ const trackingServices = {
                 const shipment = await trackingModel.getGuestShipment(order.OrderID);
                 responseData.displayInfo = {
                     message: "Đơn hàng đang vận chuyển",
-                    trackingNumber: shipment?.TrackingNumber || "Đang chờ cấp mã",
                     date: shipment?.ShippedDate || null
                 };
                 break;
@@ -60,8 +59,8 @@ const trackingServices = {
         switch (status) {
             case 'Pending': return 1;
             case 'Processing': return 2;
-            case 'Shipped': return 3;
-            case 'Delivered': return 4;
+            case 'Delivering': return 3;
+            case 'Completed': return 4;
             default: return 1;
         }
     }

@@ -111,6 +111,20 @@ const cartController = {
             return res.status(statusCode).json({ success: false, message: message });
         }
     }
+
+    ,
+    validateCart: async (req, res) => {
+        try {
+            const userId = req.user.id;
+            const result = await cartServices.validateCartForCheckout(userId);
+
+            return res.status(200).json({ success: true, data: result });
+        } catch (err) {
+            const statusCode = err.status || 500;
+            const message = err.message || "Lỗi hệ thống máy chủ";
+            return res.status(statusCode).json({ success: false, message: message });
+        }
+    }
 }
 
 module.exports = cartController;
