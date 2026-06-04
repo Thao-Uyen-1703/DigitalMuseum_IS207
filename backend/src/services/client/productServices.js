@@ -25,7 +25,7 @@ const productServices = {
         }
     },
 
-    getProductDetails: async(slug) => {
+    getProductDetails: async(id, slug) => {
         try {
             const product = await productModel.getProductBySlug(slug);
 
@@ -33,9 +33,13 @@ const productServices = {
                 throw { status: 404, message: 'Sản phẩm không tồn tại' };
             }
 
-            const reviews = await productModel.getReviewList(product.ProductID);
-            const category = await productModel.getCategoryInfo(product.CategoryID);
-            const location = await productModel.getLocationInfo(product.OriginLocationID);
+            await productModel.countProductView(id, product.ProductID);
+
+            const [reviews, category, location] = await Promise.all([
+                productModel.getReviewList(product.ProductID),
+                productModel.getCategoryInfo(product.CategoryID),
+                productModel.getLocationInfo(product.OriginLocationID)
+            ]);
 
             if(product.Details && typeof product.Details === 'string') {
                 product.Details = JSON.parse(product.Details);
