@@ -9,6 +9,7 @@ import CategoryList from './pages/Categories';
 import LocationList from './pages/Locations';
 import OrderList from './pages/Orders';
 import UserList from './pages/Users';
+import BlogList from './pages/Blogs';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
           <Route path="/dia-diem" element={<LocationList />} />
           <Route path="/don-hang" element={<OrderList />} />
           <Route path="/nguoi-dung" element={<UserList />} />
+          <Route path="/blogs" element={<BlogList />} />
         </Route>
       </Routes>
     </>
