@@ -369,7 +369,8 @@ export default function OrderList() {
                     setShipmentFormData({ 
                       ...shipmentFormData, 
                       status: newStatus,
-                      shippedDate: (newStatus === 'Delivering' || newStatus === 'Delivered') && !activeOrder?.Shipment?.ShippedDate ? now : shipmentFormData.shippedDate,
+                      // SỬA LỖI: Đổi 'Delivering' thành 'Shipping' cho khớp với option bên dưới
+                      shippedDate: (newStatus === 'Shipping' || newStatus === 'Delivered') && !activeOrder?.Shipment?.ShippedDate ? now : shipmentFormData.shippedDate,
                       deliveredDate: newStatus === 'Delivered' && !activeOrder?.Shipment?.DeliveredDate ? now : shipmentFormData.deliveredDate
                     });
                   }}
@@ -383,7 +384,8 @@ export default function OrderList() {
                 </select>
               </div>
 
-              {['Delivering', 'Delivered'].includes(shipmentFormData.status) && (
+              {/* SỬA LỖI: Đổi 'Delivering' thành 'Shipping' để thẻ input hiện ra đúng lúc */}
+              {['Shipping', 'Delivered'].includes(shipmentFormData.status) && (
                 <div className="animate-in fade-in duration-200">
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Ngày bắt đầu giao hàng</label>
                   <input
@@ -450,12 +452,11 @@ export default function OrderList() {
                   value={paymentFormData.status}
                   onChange={(e) => {
                     const newStatus = e.target.value;
-                    const now = formatDateTimeLocal(); // Lấy đúng thời điểm vừa click
+                    const now = formatDateTimeLocal();
                     
                     setPaymentFormData({ 
                       ...paymentFormData, 
                       status: newStatus,
-                      // THAY ĐỔI 3: Nếu click trạng thái mới và data cũ chưa có -> điền thời gian hiện tại
                       paidDate: newStatus === 'Paid' && !(activeOrder?.Payment?.PaidDate || activeOrder?.Payment?.paidDate) ? now : paymentFormData.paidDate
                     });
                   }}
@@ -494,11 +495,12 @@ export default function OrderList() {
         </form>
       </Modal>
 
+      {/* ================= MODAL CHI TIẾT ĐƠN HÀNG ================= */}
       <Modal
         isOpen={isDetailsModalOpen}
         title={`Chi tiết đơn hàng #${orderDetailsData?.OrderTracking || '...'}`}
         onClose={() => setIsDetailsModalOpen(false)}
-        size="lg" // Dùng size lớn (lg hoặc xl) để chứa bảng
+        size="lg"
       >
         {isFetchingDetails ? (
           <div className="flex justify-center items-center py-20">
@@ -507,15 +509,22 @@ export default function OrderList() {
         ) : orderDetailsData ? (
           <div className="space-y-6 print:space-y-4">
             
-            {/* THÔNG TIN NHẬN HÀNG & ĐƠN HÀNG */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
               <div>
                 <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Thông tin nhận hàng</h3>
                 <div className="text-sm text-gray-800 space-y-1">
                   <p className="font-semibold text-base">{orderDetailsData.ShippingInfo?.fullName || orderDetailsData.UserName}</p>
                   <p className="font-medium">SĐT: <span>{orderDetailsData.ShippingInfo?.phone || 'Chưa cập nhật'}</span></p>
+                  
+                  {/* TỐI ƯU UI: Lọc các trường undefined để tránh hiển thị dấu phẩy thừa (,,) */}
                   <p className="font-medium">
-                    Địa chỉ: <span>{orderDetailsData.ShippingInfo?.shippingAddress?.addressDetail}, {orderDetailsData.ShippingInfo?.shippingAddress?.district}, {orderDetailsData.ShippingInfo?.shippingAddress?.province}</span>
+                    Địa chỉ: <span>
+                      {[
+                        orderDetailsData.ShippingInfo?.shippingAddress?.addressDetail,
+                        orderDetailsData.ShippingInfo?.shippingAddress?.district,
+                        orderDetailsData.ShippingInfo?.shippingAddress?.province
+                      ].filter(Boolean).join(', ') || 'Chưa cập nhật'}
+                    </span>
                   </p>
                 </div>
               </div>
@@ -523,7 +532,7 @@ export default function OrderList() {
               <div>
                 <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Thông tin đơn hàng</h3>
                 <div className="text-sm text-gray-800 space-y-1">
-                  <p>Ngày đặt: <span className="font-medium">{new Date(orderDetailsData.OrderDate).toLocaleString('vi-VN')}</span></p>
+                  <p>Ngày đặt: <span className="font-medium">{orderDetailsData.OrderDate ? new Date(orderDetailsData.OrderDate).toLocaleString('vi-VN') : 'Không xác định'}</span></p>
                   <p>Trạng thái: <span className="font-medium text-blue-600">{orderDetailsData.Status}</span></p>
                   <p>Thanh toán: <span className="font-medium">{orderDetailsData.Payment?.PaymentMethod || 'Chưa cập nhật'}</span></p>
                   <p>Vận chuyển: <span className="font-medium">{orderDetailsData.Shipment?.MethodName || 'Chưa cập nhật'}</span></p>
@@ -531,17 +540,17 @@ export default function OrderList() {
               </div>
             </div>
 
-            {/* BẢNG SẢN PHẨM */}
             <div>
               <h3 className="text-sm font-bold text-gray-800 mb-3">Danh sách sản phẩm</h3>
-              <div className="border border-gray-200 rounded-xl overflow-hidden">
-                <table className="w-full text-left border-collapse">
+              {/* Thêm overflow-x-auto để tránh vỡ layout bảng trên màn hình nhỏ */}
+              <div className="border border-gray-200 rounded-xl overflow-x-auto">
+                <table className="w-full text-left border-collapse min-w-[500px]">
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
-                      <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase">Sản phẩm</th>
-                      <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase text-center">SL</th>
-                      <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase text-right">Đơn giá</th>
-                      <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase text-right">Thành tiền</th>
+                      <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase whitespace-nowrap">Sản phẩm</th>
+                      <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase text-center whitespace-nowrap">SL</th>
+                      <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase text-right whitespace-nowrap">Đơn giá</th>
+                      <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase text-right whitespace-nowrap">Thành tiền</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -550,9 +559,9 @@ export default function OrderList() {
                         <tr key={idx} className="hover:bg-gray-50 transition-colors">
                           <td className="px-4 py-3 flex items-center gap-3">
                             {item.ImageURL ? (
-                              <ImageDisplay src={item.ImageURL} alt={item.ProductName} className="w-10 h-10 object-cover rounded border border-gray-200" />
+                              <ImageDisplay src={item.ImageURL} alt={item.ProductName} className="w-10 h-10 object-cover rounded border border-gray-200 flex-shrink-0" />
                             ) : (
-                              <div className="w-10 h-10 bg-gray-100 rounded border border-gray-200 flex items-center justify-center text-gray-400 text-xs">Ảnh</div>
+                              <div className="w-10 h-10 bg-gray-100 rounded border border-gray-200 flex items-center justify-center text-gray-400 text-xs flex-shrink-0">Ảnh</div>
                             )}
                             <span className="text-sm font-medium text-gray-800 line-clamp-2">{item.ProductName}</span>
                           </td>
@@ -571,16 +580,12 @@ export default function OrderList() {
               </div>
             </div>
 
-            {/* TỔNG KẾT TIỀN */}
             <div className="flex justify-end mt-2 break-inside-avoid">
-              <div className="w-full sm:w-80 bg-blue-50/40 print:bg-transparent p-4 rounded-xl border border-blue-100 print:border-none space-y-2.5">
+              <div className="w-full bg-blue-50/40 print:bg-transparent p-4 rounded-xl border border-blue-100 print:border-none space-y-2.5">
                 
                 {(() => {
-                  // 1. Tính Tạm tính (Subtotal) = Tổng các cột Total của sản phẩm
                   const subTotal = orderDetailsData.OrderItems?.reduce((sum, item) => sum + Number(item.Total), 0) || 0;
-                  
-                  // 2. Tính Phí vận chuyển = Tổng thanh toán - Tạm tính
-                  const shippingFee = Number(orderDetailsData.TotalAmount || 0) - subTotal;
+                  const shippingFee = Math.max(0, Number(orderDetailsData.TotalAmount || 0) - subTotal);
 
                   return (
                     <>
@@ -606,8 +611,7 @@ export default function OrderList() {
               </div>
             </div>
 
-            {/* NÚT ACTION (Ẩn khi in ấn - dùng class print:hidden nếu có CSS print) */}
-            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 print:hidden">
               <button 
                 type="button" 
                 onClick={() => setIsDetailsModalOpen(false)} 

@@ -113,27 +113,21 @@ const orderServices = {
       throw { status: 400, message: 'TotalAmount là bắt buộc' };
     }
 
+    // Xử lý ShippingInfo thành chuỗi JSON nếu nó là object
+    let shippingInfo = payload.ShippingInfo || null;
+    if (shippingInfo && typeof shippingInfo !== 'string') {
+      shippingInfo = JSON.stringify(shippingInfo);
+    }
+
     const orderData = {
       UserID: payload.UserID || null,
-      AddressID: payload.AddressID || null,
+      ShippingInfo: shippingInfo,
       OrderDate: payload.OrderDate || new Date(),
-      GuestDetails: payload.UserID ? null : payload.GuestDetails || null,
       OrderTracking: payload.OrderTracking,
       TotalAmount: payload.TotalAmount,
       Status: payload.Status || 'Pending',
       Note: payload.Note || ''
     };
-
-    if (orderData.GuestDetails && typeof orderData.GuestDetails !== 'string') {
-      orderData.GuestDetails = JSON.stringify(orderData.GuestDetails);
-    }
-
-    if (orderData.UserID && orderData.AddressID) {
-      const address = await orderModel.getOrderAddress(orderData.AddressID);
-      if (!address) {
-        throw { status: 400, message: 'Địa chỉ không tồn tại' };
-      }
-    }
 
     const orderId = await orderModel.createOrder(orderData);
     return { OrderID: orderId, ...orderData };
@@ -145,27 +139,20 @@ const orderServices = {
       throw { status: 404, message: 'Đơn hàng không tồn tại' };
     }
 
+    let newShippingInfo = payload.ShippingInfo !== undefined ? payload.ShippingInfo : order.ShippingInfo;
+    if (newShippingInfo && typeof newShippingInfo !== 'string') {
+      newShippingInfo = JSON.stringify(newShippingInfo);
+    }
+
     const updateData = {
       OrderTracking: payload.OrderTracking || order.OrderTracking,
       UserID: payload.UserID !== undefined ? payload.UserID : order.UserID,
-      AddressID: payload.AddressID !== undefined ? payload.AddressID : order.AddressID,
+      ShippingInfo: newShippingInfo,
       OrderDate: payload.OrderDate || order.OrderDate,
-      GuestDetails: payload.UserID ? null : payload.GuestDetails || order.GuestDetails,
       TotalAmount: payload.TotalAmount !== undefined ? payload.TotalAmount : order.TotalAmount,
       Status: payload.Status || order.Status,
       Note: payload.Note !== undefined ? payload.Note : order.Note
     };
-
-    if (updateData.GuestDetails && typeof updateData.GuestDetails !== 'string') {
-      updateData.GuestDetails = JSON.stringify(updateData.GuestDetails);
-    }
-
-    if (updateData.UserID && updateData.AddressID) {
-      const address = await orderModel.getOrderAddress(updateData.AddressID);
-      if (!address) {
-        throw { status: 400, message: 'Địa chỉ không tồn tại' };
-      }
-    }
 
     await orderModel.updateOrder(id, updateData);
     return { OrderID: id, ...updateData };
