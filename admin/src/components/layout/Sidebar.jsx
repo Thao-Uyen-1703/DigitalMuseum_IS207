@@ -16,7 +16,7 @@ const menuItems = [
   { title: 'Danh mục', icon: Tags, navigate: '/danh-muc' },
   { title: 'Người dùng', icon: User, navigate: '/nguoi-dung' },
   { title: 'Đơn hàng', icon: ShoppingCart, navigate: '/don-hang' },
-  { title: 'Quản lý blog', icon: FileText, navigate: '/blog' },
+  { title: 'Quản lý blog', icon: FileText, navigate: '/blogs' },
 ];
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
