@@ -19,6 +19,7 @@ export default function OrderTableRow({
   const paymentMethod = order.Payment?.Method;
   const shipmentStatus = order.Shipment?.Status;
 
+  // ĐÃ BỔ SUNG: Cập nhật đầy đủ các trạng thái đồng bộ từ Backend
   const orderStatusMap = {
     Pending: {
       label: 'Đang xử lý',
@@ -28,13 +29,29 @@ export default function OrderTableRow({
       label: 'Đang chuẩn bị',
       className: 'bg-yellow-50 border-yellow-200 text-yellow-700'
     },
+    Delivering: {
+      label: 'Đang giao hàng',
+      className: 'bg-blue-50 border-blue-200 text-blue-600'
+    },
+    Delivered: {
+      label: 'Đã giao (Chờ COD)',
+      className: 'bg-teal-50 border-teal-200 text-teal-700'
+    },
     Completed: {
       label: 'Hoàn tất',
       className: 'bg-green-50 border-green-200 text-green-600'
     },
+    Failed: {
+      label: 'Giao thất bại',
+      className: 'bg-red-50 border-red-200 text-red-600'
+    },
+    Returned: {
+      label: 'Đã hoàn hàng',
+      className: 'bg-purple-50 border-purple-200 text-purple-600'
+    },
     Canceled: {
       label: 'Đã hủy',
-      className: 'bg-red-50 border-red-200 text-red-600'
+      className: 'bg-gray-100 border-gray-300 text-gray-500'
     }
   };
 
@@ -203,7 +220,7 @@ export default function OrderTableRow({
         </div>
       </td>
 
-      {/* CỘT 4: LOGISTICS VẬN CHUYỂN & THANH TOÁN (ĐÃ ÁP DỤNG MAP) */}
+      {/* CỘT 4: LOGISTICS VẬN CHUYỂN & THANH TOÁN */}
       <td className="px-6 py-4 align-top">
         <div className="flex justify-center items-center gap-5">
           {/* Vận chuyển */}

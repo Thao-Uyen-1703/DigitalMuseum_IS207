@@ -175,15 +175,14 @@ const orderModel = {
     createOrder: async (data) => {
         const query = `
             INSERT INTO orders
-                (UserID, AddressID, OrderDate, GuestDetails, OrderTracking, TotalAmount, Status, Note)
+                (UserID, OrderDate, ShippingInfo, OrderTracking, TotalAmount, Status, Note)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
         const [result] = await db.query(query, [
             data.UserID,
-            data.AddressID,
             data.OrderDate,
-            data.GuestDetails,
+            data.ShippingInfo,
             data.OrderTracking,
             data.TotalAmount,
             data.Status,
@@ -197,9 +196,8 @@ const orderModel = {
         const query = `
             UPDATE orders SET
                 UserID = ?,
-                AddressID = ?,
                 OrderDate = ?,
-                GuestDetails = ?,
+                ShippingInfo = ?,
                 OrderTracking = ?,
                 TotalAmount = ?,
                 Status = ?,
@@ -209,9 +207,8 @@ const orderModel = {
 
         const [result] = await db.query(query, [
             data.UserID,
-            data.AddressID,
             data.OrderDate,
-            data.GuestDetails,
+            data.ShippingInfo,
             data.OrderTracking,
             data.TotalAmount,
             data.Status,
