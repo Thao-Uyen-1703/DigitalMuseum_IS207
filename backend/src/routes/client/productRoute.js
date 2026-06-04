@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const productController = require('../../controllers/client/productController');
+const optionalAuthMiddleware = require('../../middleware/optionalAuthMiddleware');
 
 // Đọc danh sách (READ ALL) -> GET /api/product
 router.get('/', productController.getAllProductByFilters);
@@ -12,6 +13,6 @@ router.get('/suggestions', productController.searchSuggestions);
 router.get('/landing', productController.getLandingProducts);
 
 // Đọc chi tiết sản phẩm theo slug hoặc id -> GET /api/product/:slugOrId
-router.get('/:name', productController.getProductDetails);
+router.get('/:name', optionalAuthMiddleware, productController.getProductDetails);
 
 module.exports = router;

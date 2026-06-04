@@ -430,6 +430,15 @@ const productModel = {
         const sql = `SELECT LocationID FROM ProductLocations WHERE ProductID = ?`;
         const [rows] = await db.query(sql, [productId]);
         return rows.map(item => item.LocationID);
+    },
+
+    countProductView: async(userid, productid) => {
+        const query = `
+            INSERT INTO userviewhistory(UserID, ProductID)
+            VALUES(?, ?)
+        `;
+        const [results] = await db.query(query, [userid, productid]);
+        return results.insertId;
     }
 };
 

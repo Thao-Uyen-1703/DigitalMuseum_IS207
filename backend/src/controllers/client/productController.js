@@ -34,13 +34,14 @@ const productController = {
 
     getProductDetails: async (req, res) => {
         try {
+            const userid = req.user.id || null;
             const slug = req.params.name;
 
             if (!slug) {
                 return res.status(404).json({ success: false, message: 'Không tìm thấy sản phẩm' });
             }
 
-            const results = await productServices.getProductDetails(slug);
+            const results = await productServices.getProductDetails(userid, slug);
 
             res.status(200).json({ success: true, data: results });
         } catch (error) {
