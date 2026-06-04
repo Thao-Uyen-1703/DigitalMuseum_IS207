@@ -2,37 +2,47 @@ const db = require('../config/mysql');
 
 const productModel = {
     getFiltered: async (params) => {
-        let sql = `SELECT DISTINCT p.* FROM Products p`;
+        let sql = `
+            SELECT 
+                ProductID,
+                OriginLocationID,
+                ProductName,
+                SlugName,
+                CulturalStory,
+                Price,
+                Stock,
+                ImageURL,
+                JSON_UNQUOTE(JSON_EXTRACT(Details, '$.Description')) AS Description
+            FROM Products
+            WHERE IsActive = 1
+        `;
+
         let queryParams = [];
 
-        if (params.location) {
-            sql += `
-                JOIN ProductLocations pl ON p.ProductID = pl.ProductID
-                JOIN Locations l ON pl.LocationID = l.LocationID
-            `;
-        }
-
-        sql += ` WHERE 1=1 AND IsActive = 1`;
-
+        // Lọc theo từ khóa tìm kiếm
         if (params.search) {
-            sql += ` AND (ProductName LIKE ?)`;
+            sql += ` AND ProductName LIKE ?`;
             queryParams.push(`%${params.search}%`);
         }
 
+        // Lọc theo địa điểm (Sử dụng trực tiếp OriginLocationID)
         if (params.location) {
-            sql += ` AND l.LocationName = ?`;
+            sql += ` AND OriginLocationID = ?`;
             queryParams.push(params.location);
         }
 
-        if (params.priceFrom !== null) {
+        // Lọc theo giá
+        if (params.priceFrom !== null && params.priceFrom !== undefined) {
             sql += ` AND Price >= ?`;
             queryParams.push(params.priceFrom);
         }
-        if (params.priceTo !== null) {
+
+        if (params.priceTo !== null && params.priceTo !== undefined) {
             sql += ` AND Price <= ?`;
             queryParams.push(params.priceTo);
         }
 
+        // Sắp xếp
         if (params.sortBy === 'asc') {
             sql += ` ORDER BY Price ASC`;
         } else if (params.sortBy === 'desc') {
@@ -40,9 +50,10 @@ const productModel = {
         } else if (params.sortBy === 'name') {
             sql += ` ORDER BY ProductName ASC`;
         } else {
-            sql += ` ORDER BY CreatedAt DESC`;
+            sql += ` ORDER BY CreatedAt DESC`; // Mặc định là mới nhất
         }
 
+        // Phân trang
         sql += ` LIMIT ? OFFSET ?`;
         queryParams.push(params.perPage, params.offset);
 
@@ -124,37 +135,31 @@ const productModel = {
     },
 
     countFiltered: async (params) => {
-        let sql = `SELECT COUNT(DISTINCT p.ProductID) as total FROM Products p`;
+        let sql = `SELECT COUNT(ProductID) as total FROM Products WHERE IsActive = 1`;
         let queryParams = [];
 
-        if (params.location) {
-            sql += `
-                JOIN ProductLocations pl ON p.ProductID = pl.ProductID
-                JOIN Locations l ON pl.LocationID = l.LocationID
-            `;
-        }
-
-        sql += ` WHERE 1=1`;
-
         if (params.search) {
-            sql += ` AND (ProductName LIKE ?)`;
+            sql += ` AND ProductName LIKE ?`;
             queryParams.push(`%${params.search}%`);
         }
+        
         if (params.location) {
-            sql += ` AND l.LocationName = ?`;
+            sql += ` AND OriginLocationID = ?`;
             queryParams.push(params.location);
         }
-        if (params.priceFrom !== null) {
+        
+        if (params.priceFrom !== null && params.priceFrom !== undefined) {
             sql += ` AND Price >= ?`;
             queryParams.push(params.priceFrom);
         }
-        if (params.priceTo !== null) {
+        
+        if (params.priceTo !== null && params.priceTo !== undefined) {
             sql += ` AND Price <= ?`;
             queryParams.push(params.priceTo);
         }
 
         const [result] = await db.query(sql, queryParams);
-        return result[0].total;
+        return result[0].total || 0;
     },
 
     getProductBySlug: async (slug) => {

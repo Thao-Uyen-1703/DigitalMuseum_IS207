@@ -57,6 +57,27 @@ const productServices = {
             console.error('Product Services Error: ', error);
             throw error;
         }
+    },
+
+    getLandingProducts: async ({ limit = 5 } = {}) => {
+        try {
+            const landingFilters = {
+                location: null,
+                priceFrom: null,
+                priceTo: null,
+                sortBy: 'newest',
+                search: '',
+                page: 1,
+                perPage: limit,
+                offset: 0
+            };
+
+            const products = await productModel.getFiltered(landingFilters);
+            return products;
+        } catch (error) {
+            console.error('Product Services Error (landing products): ', error);
+            throw error;
+        }
     }
 }
 

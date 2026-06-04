@@ -11,6 +11,18 @@ const shipmentModel = {
         return rows[0];
     },
 
+    getShipmentByOrderID: async(orderId) => {
+        const query = `
+            SELECT ShipmentID, Status, ShippedDate, DeliveredDate, TrackingNumber, ShippingMethodID
+            FROM shipments
+            WHERE OrderID = ?
+            ORDER BY ShipmentID DESC
+            LIMIT 1
+        `;
+        const [rows] = await db.query(query, [orderId]);
+        return rows[0] || null;
+    },
+
     createShipment: async(shipment) => {
         const query = `
             INSERT INTO shipments SET ?

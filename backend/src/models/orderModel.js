@@ -18,9 +18,9 @@ const orderModel = {
 
     getOrderAddress: async(id) => {
         const query = `
-            SELECT ReceiverName, Phone, AddressLine, District, City
-            FROM useraddresses
-            WHERE AddressID = ?
+            SELECT ShippingInfo
+            FROM orders
+            WHERE OrderID = ?
         `;
         const [results] = await db.query(query, [id]);
         return results[0] || null;
@@ -60,7 +60,7 @@ const orderModel = {
 
     getOrderShipment: async (id) => {
         const query = `
-            SELECT sm.MethodName, s.TrackingNumber, s.ShippedDate, s.DeliveredDate
+            SELECT sm.MethodName, sm.Price, s.TrackingNumber, s.ShippedDate, s.DeliveredDate
             FROM shipments s
             INNER JOIN shippingmethods sm ON sm.ShippingMethodID = s.ShippingMethodID
             WHERE s.OrderID = ?

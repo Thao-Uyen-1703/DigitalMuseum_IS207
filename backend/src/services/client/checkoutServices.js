@@ -35,52 +35,12 @@ const checkoutServices = {
 
         totalAmount += Number(shippingMethod.Price || 0);
 
-        // 3. Xử lý địa chỉ giao hàng và danh tính (User / Guest)
-        let addressId = null;
-        let guestDetails = null;
-
-        if (!userId) {
-            // Là Guest (Khách vãng lai): Gộp customerInfo vào thành chuỗi JSON
-            guestDetails = JSON.stringify({
-                fullName: customerInfo.fullName,
-                email: customerInfo.email,
-                phone: customerInfo.phone,
-                shippingAddress: customerInfo.shippingAddress,
-                note: customerInfo.note
-            });
-        } else {
-            // Là User: Kiểm tra và xử lý địa chỉ trong bảng userAddresses
-            const { fullName, phone, shippingAddress } = customerInfo;
-            const { addressDetail, district, province } = shippingAddress;
-
-            const existingAddress = await checkoutModel.findUserAddress(
-                userId, 
-                addressDetail, 
-                district, 
-                province
-            );
-
-            if (existingAddress) {
-                // Nếu đã tồn tại địa chỉ này -> Lấy ID
-                addressId = existingAddress.AddressID;
-            } else {
-                // Nếu chưa tồn tại -> Tạo mới và lấy ID
-                addressId = await checkoutModel.createUserAddress({
-                    userId,
-                    fullName,
-                    phone,
-                    addressLine: addressDetail,
-                    district,
-                    city: province
-                });
-            }
-        }
-
-        // 4. Đóng gói dữ liệu để đưa xuống Model xử lý Transaction
+        const { note, ...shippingInfo } = customerInfo;
+        
         const orderData = {
             userId: userId || null,
-            addressId,
-            guestDetails,
+            shippingInfo: JSON.stringify(shippingInfo),
+            note: note,
             totalAmount,
             shippingMethodId: shippingMethod.ShippingMethodID,
             paymentMethod: paymentMethod,

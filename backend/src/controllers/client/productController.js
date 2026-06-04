@@ -64,6 +64,56 @@ const productController = {
             res.status(500).json({ success: false, message: 'Lỗi máy chủ' });
         }
     },
+
+    getLandingProducts: async (req, res) => {
+        try {
+            const limit = parseInt(req.query.limit, 10) || 5;
+            const products = await productServices.getLandingProducts({ limit });
+
+            res.status(200).json({ success: true, data: products });
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ success: false, message: 'Lỗi máy chủ' });
+        }
+    },
+
+    searchSuggestions: async (req, res) => {
+        try {
+            const { q } = req.query;
+
+            if (!q || q.trim().length === 0) {
+                return res.status(200).json({ success: true, data: [] });
+            }
+
+            const filterParams = {
+                location: null,
+                priceFrom: null,
+                priceTo: null,
+                sortBy: 'newest',
+                search: q.trim(),
+                page: 1,
+                perPage: 5
+            };
+
+            const result = await productServices.getProductsByFilters(filterParams);
+
+            res.status(200).json({ 
+                success: true, 
+                data: result.products.map(p => ({
+                    ProductID: p.ProductID,
+                    ProductName: p.ProductName,
+                    SlugName: p.SlugName,
+                    Price: p.Price,
+                    ImageURL: p.ImageURL,
+                    Stock: p.Stock
+                }))
+            });
+
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ success: false, message: 'Lỗi máy chủ' });
+        }
+    },
 };
 
 module.exports = productController;
